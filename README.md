@@ -2,7 +2,7 @@
 
 ![Pirate Radio](https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fstatic.tvtropes.org%2Fpmwiki%2Fpub%2Fimages%2FPirate_radio_station_5417.jpg&f=1&nofb=1)
 
-The norns study group Discord is turning 1 year old! To celebrate, we are experimenting with this new group project. Previously we worked on the [song](https://github.com/norns-study-group/song) project. The pirate radio project seeks to build on our experinces with the song project, but is bigger, more ambitious, and more structured.
+The norns study group Discord is turning 1 year old! To celebrate, we are experimenting with this new group project. Previously we worked on the [song](https://github.com/norns-study-group/song) project. The pirate radio project seeks to build on our experiences with the song project, but is bigger, more ambitious, and more structured.
 
 ## The Vision
 
