@@ -10,10 +10,12 @@ The norns study group Discord is turning 1 year old! To celebrate, we are experi
 
 ## The Team
 
+*[pirates...] a shallow and functional hierarchy, risk / reward, collective praxis* - `@syntheist`
+
+- Developers / QA / Support: [All tracked here.](https://docs.google.com/spreadsheets/d/1sgBaggUcnjZBOgAjG8eIFyYXiv_lspyWofmjwelrVUE/edit?usp=sharing)
 - Product Owner: `@obakegaku`. The term [Product Owner](https://en.wikipedia.org/wiki/Scrum_(software_development)#Product_owner) comes from agile software development practices. POs balance product (usable software) choices with various stakeholder, technical, and team constraints. They are ultimately responsible for shaping the product and ensuring all voices are heard.
 - Project Manager: `@tyleretters`. PM's simply keep things on the rails. Since this is an educational project with volunteered time, the main role of the project manager will be ensuring the team has clear objectives and good tooling.
-- Tutors: `@license`, `@jaseknighter`, + others TBD. Several norns study group tutors have volunteered their time and pair up with tutees.
-- Developers: TBD. Sign ups are now open. If you've been on the fence about jumping in this is your chance!
+- CTO: `@catfact`. Stares off distantly from the crows nest.
 
 ## The Tools
 
@@ -23,6 +25,6 @@ The norns study group Discord is turning 1 year old! To celebrate, we are experi
 - Command Line: Use the command line / terminal to commit your code. Again, your tutor will help you learn git.
 - norns / shield: :)
 
-## Signup & Goal
+## Goal
 
-Our target launch date is December 31st so we can ring in the new year like pirates! Signups are now open. **Raise your hand by September 30th** if you're interested in becoming a pirate. Once our crew is assembled we'll have a short video kickoff call in the study!
+Our target launch date is December 31st so we can ring in the new year like pirates!
