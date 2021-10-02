@@ -4,6 +4,10 @@
 
 The norns study group Discord is turning 1 year old! To celebrate, we are experimenting with this new group project. Previously we worked on the [song](https://github.com/norns-study-group/song) project. The pirate radio project seeks to build on our experiences with the song project, but is bigger, more ambitious, and more structured.
 
+## Meeting Minutes
+
+[YARRRRR!](https://docs.google.com/document/d/1jNHnpUeweiwFgerYhkINJbBXRhU_48Kgr6Z3nTv1YW4/edit)
+
 ## The Vision
 
 *p2p norns pirate radio: an educational project for new developers to learn how to code*
@@ -20,7 +24,6 @@ The norns study group Discord is turning 1 year old! To celebrate, we are experi
 ## The Tools
 
 - GitHub: this repository will house the script and will eventually be released on norns.
-- Kanban Board: The `mvp` (Minimum Viable Product) [kanban board](https://github.com/norns-study-group/pirate-radio/projects/1) will be used to track work.
 - Text Editor: Bring your own text editor / IDE. If you don't have one yet, your tutor will help you select one that fits your skill and aesthetic.
 - Command Line: Use the command line / terminal to commit your code. Again, your tutor will help you learn git.
 - norns / shield: :)
