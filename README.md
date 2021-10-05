@@ -16,6 +16,7 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 - Zebrula Cha / `@catfact`
 - Ben Jones / `@obakegaku`
 - Ed Rapley / `@syntheist`
+- Sven Lutz / `@hiqualityh2o`
 
 ## Meeting Minutes
 
