@@ -12,6 +12,7 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 - Ryan Laws / `@ryanlaws`
 - Zeke Becerra / `@zeke_b`
 - Rylee Lyman / `@ryleelyman`
+- Jonathan Snyder / `@jaseknighter`
 
 ## Meeting Minutes
 
