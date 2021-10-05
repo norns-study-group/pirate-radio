@@ -10,6 +10,7 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 
 - Tyler Etters / `@tyleretters`
 - Ryan Laws / `@ryanlaws`
+- Zeke Becerra / `@zeke_b`
 - Rylee Lyman / `@ryleelyman`
 
 ## Meeting Minutes
