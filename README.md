@@ -14,6 +14,7 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 - Rylee Lyman / `@ryleelyman`
 - Jonathan Snyder / `@jaseknighter`
 - Zebrula Cha / `@catfact`
+- Ben Jones / `@obakegaku`
 
 ## Meeting Minutes
 
