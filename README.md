@@ -4,6 +4,12 @@
 
 The norns study group Discord is turning 1 year old! To celebrate, we are experimenting with this new group project. Previously we worked on the [song](https://github.com/norns-study-group/song) project. The pirate radio project seeks to build on our experiences with the song project, but is bigger, more ambitious, and more structured.
 
+# Signatures
+
+Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests)) to confirm you are setup with GitHub and ready to sail the high data seas!!
+
+- Tyler Etters / `@tyleretters`
+
 ## Meeting Minutes
 
 [YARRRRR!](https://docs.google.com/document/d/1jNHnpUeweiwFgerYhkINJbBXRhU_48Kgr6Z3nTv1YW4/edit)
