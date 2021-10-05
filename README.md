@@ -10,6 +10,7 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 
 - Tyler Etters / `@tyleretters`
 - Ryan Laws / `@ryanlaws`
+- Rylee Lyman / `@ryleelyman`
 
 ## Meeting Minutes
 
@@ -37,4 +38,4 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 
 ## Goal
 
-Our target launch date is December 31st so we can ring in the new year like pirates!
+Our target launch date be December 31st so we can rrrring in the new year like pirates, arr!
