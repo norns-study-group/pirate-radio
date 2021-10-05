@@ -13,6 +13,7 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 - Zeke Becerra / `@zeke_b`
 - Rylee Lyman / `@ryleelyman`
 - Jonathan Snyder / `@jaseknighter`
+- Ben Jones / `@obakegaku`
 
 ## Meeting Minutes
 
