@@ -9,6 +9,7 @@ The norns study group Discord is turning 1 year old! To celebrate, we are experi
 Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests)) to confirm you are setup with GitHub and ready to sail the high data seas!!
 
 - Tyler Etters / `@tyleretters`
+- Ryan Laws / `@ryanlaws`
 
 ## Meeting Minutes
 
