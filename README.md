@@ -18,6 +18,7 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 - Ed Rapley / `@syntheist`
 - Sven Lutz / `@hiqualityh2o`
 - Julien Hughes / `@julienjulienjulien`
+- Alex Toland / `@taubaland`
 
 ## Meeting Minutes
 
