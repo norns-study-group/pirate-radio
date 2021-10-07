@@ -18,7 +18,7 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 - Ed Rapley / `@syntheist`
 - Sven Lutz / `@hiqualityh2o`
 - Julien Hughes / `@julienjulienjulien`
-
+- Richard Garrell / `@aeonerspace`
 ## Meeting Minutes
 
 [YARRRRR!](https://docs.google.com/document/d/1jNHnpUeweiwFgerYhkINJbBXRhU_48Kgr6Z3nTv1YW4/edit)
