@@ -18,11 +18,9 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 - Ed Rapley / `@syntheist`
 - Sven Lutz / `@hiqualityh2o`
 - Julien Hughes / `@julienjulienjulien`
-<<<<<<< HEAD
+- Richard Garrell / `@aeonerspace`
 - Zak "Salty Dog" Scholl / `@schollz`
-=======
 - Alex Toland / `@taubaland`
->>>>>>> 3379441 (Avast Ye)
 
 ## Meeting Minutes
 
