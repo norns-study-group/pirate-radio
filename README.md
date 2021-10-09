@@ -55,7 +55,7 @@ Our target launch date be December 31st so we can rrrring in the new year like p
 ## Treasure map (x marks the spot)
 
 - [x] do you even git?
-- [ ] (lua) ui framework (pages)
+- [ ] (lua) [ui framework (pages)](https://github.com/norns-study-group/pirate-radio/wiki/UI-Widgets)
 - [ ] (lua) dial station ui
 - [ ] (lua) uploading file
 - [ ] (lua) downloading file
