@@ -19,6 +19,9 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 - Sven Lutz / `@hiqualityh2o`
 - Julien Hughes / `@julienjulienjulien`
 - Richard Garrell / `@aeonerspace`
+- Zak "Salty Dog" Scholl / `@schollz`
+- Alex Toland / `@taubaland`
+
 ## Meeting Minutes
 
 [YARRRRR!](https://docs.google.com/document/d/1jNHnpUeweiwFgerYhkINJbBXRhU_48Kgr6Z3nTv1YW4/edit)
