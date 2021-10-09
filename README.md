@@ -68,6 +68,7 @@ Our target launch date be December 31st so we can rrrring in the new year like p
 - [ ] (backend) server handling uploads
 - [ ] (backend) server handling downloads
 - [ ] (sc) pillage
+- [ ] (lua) weather station (50% there)
 - [ ] (sc) station playback
 - [ ] (sc) noise / interference sound design
 - [ ] (sc) other fx
