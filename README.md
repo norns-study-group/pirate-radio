@@ -21,6 +21,7 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 - Richard Garrell / `@aeonerspace`
 - Zak "Salty Dog" Scholl / `@schollz`
 - Alex Toland / `@taubaland`
+- "Roaring" Dan Derks / `@dndrks`
 
 ## Meeting Minutes
 
