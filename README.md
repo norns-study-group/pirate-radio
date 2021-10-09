@@ -19,10 +19,14 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 - Sven Lutz / `@hiqualityh2o`
 - Julien Hughes / `@julienjulienjulien`
 <<<<<<< HEAD
+<<<<<<< HEAD
 - Zak "Salty Dog" Scholl / `@schollz`
 =======
 - Alex Toland / `@taubaland`
 >>>>>>> 3379441 (Avast Ye)
+=======
+- Alex Toland / `@taubaland`
+>>>>>>> 33794413cefe3c723d682a87fb1e1cf48baaed57
 
 ## Meeting Minutes
 
