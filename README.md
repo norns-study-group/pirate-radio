@@ -22,6 +22,7 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 - Zak "Salty Dog" Scholl / `@schollz`
 - Alex Toland / `@taubaland`
 - "Roaring" Dan Derks / `@dndrks`
+- Duncan "Pegleg" Geere / `@duncangeere`
 
 ## Meeting Minutes
 
