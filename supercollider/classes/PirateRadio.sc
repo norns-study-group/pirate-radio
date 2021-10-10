@@ -24,15 +24,19 @@ PirateRadio {
 	//--- busses
 	// array of busses for streams
 	var <streamBusses;
+	// strength busese for output the strength of the stream
+	var <strengthBusses;
 	// a bus for noise
 	var <noiseBus;
 	// final output bus. effects can be performed on this bus in-place
 	var <outputBus;
-
+	// a control bus for the dial position
+	var <dialBus;
 
 	//--- child components
 	var streamPlayers;
 	var noise;
+	var dial;
 	var selector;
 	var effects;
 
@@ -65,7 +69,8 @@ PirateRadio {
 		this.scanFiles;
 
 		//--------------------
-		//-- create busses; all of them are stereo
+		//-- create busses
+		// audio buses are stereo
 		streamBusses = Array.fill(numStreams, {
 			Bus.audio(server, 2);
 		});
@@ -73,6 +78,15 @@ PirateRadio {
 		noiseBus = Bus.audio(server, 2);
 
 		outputBus = Bus.audio(server, 2);
+
+		// control buses are mono
+
+		dialBus = Bus.control(server,1);
+		// each station outputs its own strength
+		strengthBusses = Array.fill(numStreams, {
+			Bus.control(server, 1);
+		});
+
 
 		//------------------
 		//-- create synths and components
@@ -82,13 +96,15 @@ PirateRadio {
 		// here we do that in the simplest way:
 		// each component places its synths at the end of the server's node list
 		// so, the order of instantation is also the order of execution
+		dial = PradDialController.new(server, dialBus);
+
 		streamPlayers = Array.fill(numStreams, { arg i;
-			PradStreamPlayer.new(server, streamBusses[i]);
+			PradStreamPlayer.new(server, streamBusses[i], strengthBusses[i], dialBus);
 		});
 
-		noise = PradNoise.new(server, noiseBus);
+		noise = PradNoise.new(server, noiseBus, dialBus);
 
-		selector = PradStreamSelector.new(server, streamBusses, noiseBus, outputBus);
+		selector = PradStreamSelector.new(server, streamBusses, strengthBusses, noiseBus, outputBus);
 
 		effects = PradEffects.new(server, outputBus);
 
@@ -103,6 +119,7 @@ PirateRadio {
 
 	// refresh the list of sound files
 	scanFiles {
+		fileLocation.postln;
 		filePaths = PathName.new(fileLocation).files;
 		///... update the streamPlayers or whatever
 	}
@@ -110,8 +127,7 @@ PirateRadio {
 	// set the dial position
 	setDial {
 		arg value;
-		noise.setDial(value);
-		selector.setDial(value);
+		dial.setDial(value);
 		// now... there is a little issue/question here.
 		// the simplest way to manage the multiple streams is to just have them all running all the time.
 		// but this won't be feasible if there are many streams
@@ -139,6 +155,7 @@ PirateRadio {
 		outputBus.free;
 		noiseBus.free;
 		streamBusses.do({ arg bus; bus.free; });
+		strengthBusses.do({ arg bus; bus.free; });
 	}
 }
 
@@ -148,11 +165,9 @@ PirateRadio {
 // supercollier doesn't have namespaces unfortunately (probably in v4)
 // so this is a common pattern: use a silly class-name prefix as a pseudo-namespace
 
-PradStreamPlayer {
-	// streaming buffer(s) and synth(s)..
-	// (probably want 2x of each, to cue/crossfade)
-	var <bufs;
-	var <synths;
+PradDialController {
+	// a simple controller that sets the global "dial"
+	var <synth;
 
 	*new {
 		arg server, outBus;
@@ -160,9 +175,58 @@ PradStreamPlayer {
 	}
 
 	init {
+		arg server, outBus;
+		synth = {
+			arg dial;
+			Out.kr(outBus, Lag.kr(dial,0.1));
+		}.play(target:server, addAction:\addToTail);
+	}
+
+	setDial {
+		arg value;
+		synth.set(\dial, value);
+	}
+
+	free {
+		synth.free;
+	}
+}
+
+PradStreamPlayer {
+	// streaming buffer(s) and synth(s)..
+	// (probably want 2x of each, to cue/crossfade)
+	var <bufs;
+	var <synths;
+
+	*new {
+		arg server, outBus, outStrengthBus, inDialBus;
+		^super.new.init(server, outBus, outStrengthBus, inDialBus);
+	}
+
+	init {
 		//////////////////
 		// this one could get a little involved..
 		///////////////////
+		arg server, outBus, outStrengthBus, inDialBus;
+		synths = Array.fill(1,{
+			arg band=100, bandwidth=0.5;
+			var snd, strength, dial;
+
+			// dial is control by one 
+			dial = In.kr(inDialBus, 1);
+
+			// strength emulates the "resonance" of a radio
+			// strength is function of the dial position
+			// and this stations band + bandwidth
+			strength=exp(0.5.neg*(((dial-band)/bandwidth)**1).abs);
+
+			// dummy sound
+			snd = SinOsc.ar(band);
+
+			Out.kr(outStrengthBus, strength);
+			Out.ar(outBus,snd);
+		}.play(target:server, addAction:\addToTail)
+		);
 	}
 
 	/////////////////
@@ -193,24 +257,25 @@ PradNoise {
 	var <synth;
 
 	*new {
-		arg server, outBus;
-		^super.new.init(server, outBus);
+		arg server, outBus, dialBus;
+		^super.new.init(server, outBus, dialBus);
 	}
 
 	init {
-		arg server, outBus;
+		arg server, outBus, dialBus;
 		synth = {
-			// probably want to vary the noise somehow depending on dial position, yar?
-			arg dial;
+			var snd, dial,moving;
 
-			var snd;
+			dial = In.kr(dialBus,1);
+			moving = EnvGen.kr(Env.perc(0.1,1),Changed.kr(dial)+Dust.kr(0.1));
 
 			///////////////
-			////
-			snd = BrownNoise.ar(0.2).dup + LPf.ar(Dust.ar(1), LFNoise2.kr(0.1).linexp(100, 4000).dup);
-			snd = snd + SinOsc.ar(LFNoise2.kr(LFNoise1.kr(0.1).linlin(1, 100).linexp(60, 666)));
-			snd = snd.ring1(SinOsc.ar(LFNoise2.kr(LFNoise1.kr(0.1).linlin(1, 100).linexp(60, 666))).dup);
-			snd = snd + HenonC.ar(a:LFNoise2.kr(0.2).linlin(-1,1,1.1,1.5).dup);
+			//// radio static
+			snd = BrownNoise.ar(0.2).dup + LPF.ar(Dust.ar(1), LinExp.kr(LFNoise2.kr(0.1),0,1,100, 4000));
+			snd = snd + SinOsc.ar(LFNoise2.kr(LinExp.kr(LinLin.kr(LFNoise1.kr(0.5),0,1,50, 100),60,666)),mul:moving);
+			snd = SelectX.ar(moving,[snd,snd.ring1(SinOsc.ar(LFNoise2.kr(LinExp.kr(LinLin.kr(LFNoise1.kr(0.5),0,1,1, 100),60,666))).dup)]);
+			// commented because this is very very high pitched
+			// snd = snd + HenonC.ar(a:LFNoise2.kr(0.2).linlin(-1,1,1.1,1.5).dup);
 			//... or whatever
 			////////////////
 
@@ -278,34 +343,39 @@ PradStreamSelector {
 	var <synth;
 
 	*new {
-		arg server, streamBusses, noiseBus, outBus;
+		arg server, streamBusses, strengthBusses, noiseBus, outBus;
 		^super.new.init(server);
 	}
 
-	init { arg server, streamBusses, noiseBus, outBus;
+	init { arg server, streamBusses, strengthBusses, noiseBus, outBus;
 		var numStreams = streamBusses.size;
 
 		// also could define the SynthDef explicitly
 		synth = {
 			arg dial; // the selection parameter
-			var streams, noise, mix;
+			var streams, strengths, noise, mix, snd;
+			strengths = strengthBusses.collect({ arg bus;
+				In.kr(bus.index, 1)
+			});
 			streams = streamBusses.collect({ arg bus;
 				In.ar(bus.index, 2)
 			});
-			noise =In.ar(noiseBus, 2);
 
 
-			///////////////////////////
-			// mix =  ....
-			//////////////////////////
+			noise = In.ar(noiseBus, 2);
 
-			Out.ar(outBus.index, mix);
+			// weight sound by strength
+			mix = Mix.new(streams.collect({ arg snd, i;
+				snd * strengths[i]
+			}));
+
+			// noise is attenuated by inverse of total strength
+			noise = (1-Clip.kr(Mix.new(strengths.collect({arg s; s}))))*noise;
+
+			snd = mix + noise;
+
+			Out.ar(outBus.index, snd);
 		}.play(target:server, addAction:\addAfter);
-	}
-
-	setDial {
-		arg value;
-		synth.set(\dial, value);
 	}
 
 	free {
