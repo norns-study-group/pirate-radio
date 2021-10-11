@@ -39,6 +39,7 @@ PirateRadio {
 	var dial;
 	var selector;
 	var effects;
+	var saturator;
 
 	//--- synths
 
@@ -63,14 +64,18 @@ PirateRadio {
 
 	// initialize a new `PirateRadio` object / allocate resources
 	init {
-		arg server, fileLocation;
+		arg server, fileLocationPath;
 
-		if (fileLocation.isNil, { fileLocation = defaultFileLocation; });
+		server.postln;
+
+		if (fileLocation.isNil, { fileLocation = fileLocationPath; });
 		this.scanFiles;
 
 		//--------------------
 		//-- create busses
 		// audio buses are stereo
+		numStreams=2;
+
 		streamBusses = Array.fill(numStreams, {
 			Bus.audio(server, 2);
 		});
@@ -108,19 +113,22 @@ PirateRadio {
 
 		effects = PradEffects.new(server, outputBus);
 
+		saturator = PradStereoBitSaturator.new(server, server, outputBus);
+
 		outputSynth = {
-			arg threshold=0.99, lookahead=0.2;
+			arg in, out=0, threshold=0.99, lookahead=0.2;
 			var snd;
-			snd = In.ar(outputBus, 2);
+			snd = In.ar(in, 2);
 			snd = Limiter.ar(snd, threshold, lookahead).clip(-1, 1);
 			Out.ar(0, snd);
-		}.play(target:server, addAction:\addToTail);
+		}.play(target:server, args:[\in, outputBus.index], addAction:\addToTail);
 	}
 
 	// refresh the list of sound files
 	scanFiles {
 		fileLocation.postln;
 		filePaths = PathName.new(fileLocation).files;
+		filePaths.postln;
 		///... update the streamPlayers or whatever
 	}
 
@@ -134,6 +142,11 @@ PirateRadio {
 		// it may be better, but def. more complicated,
 		// to have the selector hold references to the streamPlayers themselves,
 		// and pause un-selected streams as appropriate.
+	}
+
+	setBand {
+		arg i,band,bandwidth;
+		streamPlayers[i].setBand(band,bandwidth);
 	}
 
 	// set an effect parameter
@@ -194,9 +207,9 @@ PradDialController {
 
 PradStreamPlayer {
 	// streaming buffer(s) and synth(s)..
-	// (probably want 2x of each, to cue/crossfade)
-	var <bufs;
-	var <synths;
+	// TODO: future (probably want 2x of each, to cue/crossfade)
+	var <buf;
+	var <synth;
 
 	*new {
 		arg server, outBus, outStrengthBus, inDialBus;
@@ -208,11 +221,11 @@ PradStreamPlayer {
 		// this one could get a little involved..
 		///////////////////
 		arg server, outBus, outStrengthBus, inDialBus;
-		synths = Array.fill(1,{
+		synth = {
 			arg band=100, bandwidth=0.5;
 			var snd, strength, dial;
 
-			// dial is control by one 
+			// dial is control by one
 			dial = In.kr(inDialBus, 1);
 
 			// strength emulates the "resonance" of a radio
@@ -225,8 +238,7 @@ PradStreamPlayer {
 
 			Out.kr(outStrengthBus, strength);
 			Out.ar(outBus,snd);
-		}.play(target:server, addAction:\addToTail)
-		);
+		}.play(target:server, addAction:\addToTail);
 	}
 
 	/////////////////
@@ -243,11 +255,20 @@ PradStreamPlayer {
 
 	outOfLoot {
 	}
+
+
+	setBand {
+		arg band,bandwidth;
+		synth.set(\band, band,\bandwidth,bandwidth);
+	}
+
 	////////////////
 
 	free {
-		synths.do({ arg synth; synth.free; });
-		bufs.do({ arg buf; buf.free; });
+		synth.free;
+		buf.free;
+		// synths.do({ arg synth; synth.free; });
+		// bufs.do({ arg buf; buf.free; });
 	}
 }
 
@@ -264,7 +285,8 @@ PradNoise {
 	init {
 		arg server, outBus, dialBus;
 		synth = {
-			var snd, dial,moving;
+			arg out;
+			var snd, dial, moving;
 
 			dial = In.kr(dialBus,1);
 			moving = EnvGen.kr(Env.perc(0.1,1),Changed.kr(dial)+Dust.kr(0.1));
@@ -275,6 +297,7 @@ PradNoise {
 			snd = snd + SinOsc.ar(LFNoise2.kr(LinExp.kr(LinLin.kr(LFNoise1.kr(0.5),0,1,50, 100),60,666)),mul:moving);
 			snd = SelectX.ar(moving,[snd,snd.ring1(SinOsc.ar(LFNoise2.kr(LinExp.kr(LinLin.kr(LFNoise1.kr(0.5),0,1,1, 100),60,666))).dup)]);
 			// commented because this is very very high pitched
+			///// whoops, wants a `freq` arg - emb
 			// snd = snd + HenonC.ar(a:LFNoise2.kr(0.2).linlin(-1,1,1.1,1.5).dup);
 			//... or whatever
 			////////////////
@@ -282,8 +305,8 @@ PradNoise {
 			// force everything down to stereo
 			snd = Mix.new(snd.clump(2));
 
-			Out.ar(outBus, snd);
-		}.play(target:server, addAction:\addToTail);
+			Out.ar(out, snd);
+		}.play(target:server, args:[\out, outBus.index], addAction:\addToTail);
 	}
 
 	setDial {
@@ -311,13 +334,13 @@ PradEffects {
 		// also could define the SynthDef explicitly
 		synth = {
 			// ... whatever args
-			arg chorusRate=0.2, preGain=1.0;
+			arg bus, chorusRate=0.2, preGain=1.0;
 
 			var signal;
 			signal = In.ar(bus, 2);
 
 			////////////////
-			signal = DelayC.ar(signal, delayTime:LFNoise2.kr(chorusRate).linlin(-1,1, 0.01, 0.06));
+			signal = DelayC.ar(signal, delaytime:LFNoise2.kr(chorusRate).linlin(-1,1, 0.01, 0.06));
 			signal = Greyhole.ar(signal);
 			signal = (signal*preGain).distort.distort;
 			//... or whatever
@@ -327,7 +350,7 @@ PradEffects {
 			// so this is how to do an "insert" processor
 			ReplaceOut.ar(bus, signal);
 
-		}.play(target:server addAction:\addToTail);
+		}.play(target:server, args:[\bus, bus.index], addAction:\addToTail);
 	}
 
 
@@ -344,7 +367,7 @@ PradStreamSelector {
 
 	*new {
 		arg server, streamBusses, strengthBusses, noiseBus, outBus;
-		^super.new.init(server);
+		^super.new.init(server, streamBusses, strengthBusses, noiseBus, outBus);
 	}
 
 	init { arg server, streamBusses, strengthBusses, noiseBus, outBus;
@@ -352,7 +375,7 @@ PradStreamSelector {
 
 		// also could define the SynthDef explicitly
 		synth = {
-			arg dial; // the selection parameter
+			arg out; // the selection parameter
 			var streams, strengths, noise, mix, snd;
 			strengths = strengthBusses.collect({ arg bus;
 				In.kr(bus.index, 1)
@@ -360,7 +383,6 @@ PradStreamSelector {
 			streams = streamBusses.collect({ arg bus;
 				In.ar(bus.index, 2)
 			});
-
 
 			noise = In.ar(noiseBus, 2);
 
@@ -372,10 +394,11 @@ PradStreamSelector {
 			// noise is attenuated by inverse of total strength
 			noise = (1-Clip.kr(Mix.new(strengths.collect({arg s; s}))))*noise;
 
+			// mix the sound and noise
 			snd = mix + noise;
 
-			Out.ar(outBus.index, snd);
-		}.play(target:server, addAction:\addAfter);
+		    Out.ar(out, snd);
+		}.play(target:server, args:[\out, outBus.index], addAction:\addToTail);
 	}
 
 	free {
@@ -434,7 +457,7 @@ PradStereoBitSaturator {
 			crush = (x.abs * steps).round * x.sign / steps;
 			exp = Shaper.ar(expandBuf.bufnum, crush);
 			ReplaceOut.ar(bus.index, SelectX.ar(expAmt, [crush, exp]));
-		}.play(target:target, addAction:\addAfter);
+		}.play(target:target, addAction:\addToTail);
 	}
 
 	setParam {
