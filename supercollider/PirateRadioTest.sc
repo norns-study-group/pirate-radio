@@ -2,8 +2,8 @@
 // then recompile with Ctl+Shift+L (windows)
 
 (
-// define radio
-p=PirateRadio.new(s,"C:\\Users\\zacks\\Desktop\\temp\\shortaudio");
+// define radio with 2 stations
+p=PirateRadio.new(s,2,"C:\\Users\\zacks\\Desktop\\temp\\shortaudio");
 // set band and bandwidth of station 0
 p.setBand(0,94.7,0.1);
 // set band and bandwidth of station 1
@@ -17,7 +17,5 @@ p.setDial(98.6); // station "1"
 
 // interrupt station broadcast with a file (afte rwhich it continues)
 // (useful for shoutouts)
-p.playFile(0,"C:\\Users\\zacks\\Desktop\\temp\\shortaudio\\172-8-12.wav");
-
-
+p.setNextFile(0,"C:\\Users\\zacks\\Desktop\\temp\\shortaudio\\172-8-12.wav");
 
