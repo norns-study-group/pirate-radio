@@ -49,15 +49,14 @@ PirateRadio {
 
 	//--------------------
 	//----- class methods
-	var trigSkip=0;
 
 	// most classes have a `*new` method
 	*new {
-		arg server, fileLocation;
+		arg server, streamNum, fileLocation;
 		// this is a common pattern:
 		// construct the superclass, then call our init function on it
 		// (beware that the superclass cannot also have a method named `init`)
-		^super.new.init(server, fileLocation);
+		^super.new.init(server,streamNum, fileLocation);
 	}
 
 
@@ -66,40 +65,13 @@ PirateRadio {
 
 	// initialize a new `PirateRadio` object / allocate resources
 	init {
-		arg server, fileLocationPath;
+		arg server, streamNum, fileLocationPath;
 
 		server.postln;
 
-		numStreams=2;
+		numStreams=streamNum;
 
 		if (fileLocation.isNil, { fileLocation = fileLocationPath; });
-		this.scanFiles;
-
-		// create a file handler trigger
-		// create a trigger function that handles when a synth is finished
-		// and sends it its next file
-		OSCFunc({ arg msg, time;
-			var sndID=0, stationID=0, maxNum=0, startNum=0;
-			[msg, time].postln;
-			// WTF: for some reason the trigger is triggering twice!?
-			if (trigSkip>0,{
-				// station ID
-				stationID=msg[2];
-				// the stream player plays files indexed by [startNum, filesPerStream)
-				startNum=stationID*filesPerStream;
-				// next file number
-				sndID=msg[3].asInteger+1;
-				// if we are at the end of playlist, start over
-				if (sndID>(filesPerStream+startNum-1),{
-					sndID=startNum;
-				});
-				// tell it to play the next file
-				streamPlayers[stationID].playFile(sndID,filePaths[sndID]);
-			});
-			// WTF: see above
-			trigSkip=1-trigSkip;
-		},'/tr', server.addr);
-
 
 		//--------------------
 		//-- create busses
@@ -110,8 +82,11 @@ PirateRadio {
 			Bus.audio(server, 2);
 		});
 
+		// noise for that radio-esque noise
 		noiseBus = Bus.audio(server, 2);
 
+		// output bus for holding the final sound
+		// and transfering through various effects
 		outputBus = Bus.audio(server, 2);
 
 		// control buses are mono
@@ -133,6 +108,7 @@ PirateRadio {
 		// here we do that in the simplest way:
 		// each component places its synths at the end of the server's node list
 		// so, the order of instantation is also the order of execution
+		"creating dial".postln;
 		dial = PradDialController.new(server, dialBus);
 
 		"creating stations".postln;
@@ -140,19 +116,22 @@ PirateRadio {
 			PradStreamPlayer.new(i, server, streamBusses[i], strengthBusses[i], dialBus);
 		});
 
+		"updating stations with files".postln;
+		this.scanFiles;
+
 		"creating noise".postln;
 		noise = PradNoise.new(server, noiseBus, dialBus);
 
 		"creating selector".postln;
 		selector = PradStreamSelector.new(server, streamBusses, strengthBusses, noiseBus, outputBus);
 
-		// TODO: more addons...
-
 		// "adding effects".postln;
 		// effects = PradEffects.new(server, outputBus);
 
 		// "adding saturator".postln;
 		// saturator = PradStereoBitSaturator.new(server, server, outputBus);
+
+		// TODO: add 10-band equalizer at the end?
 
 		"creating output synth".postln;
 		outputSynth = {
@@ -163,16 +142,13 @@ PirateRadio {
 			Out.ar(0, snd);
 		}.play(target:server, args:[\in, outputBus.index], addAction:\addToTail);
 
-		// WTF: for whatever reason this won't work without a little delay
+		// for whatever reason this won't work without a little delay
 		// so I am playing the first file for each station stream in this Routine
 		Routine {
 			1.wait;
-			"initializing stations".postln;
+			"starting stations playing".postln;
 			streamPlayers.do({ arg syn, i;
-				var sndID=filesPerStream*i;
-				sndID.postln;
-				filePaths[sndID].postln;
-				streamPlayers[i].playFile(sndID,filePaths[sndID].asAbsolutePath);
+				streamPlayers[i].playNextFile();
 			});
 		}.play;
 	}
@@ -181,9 +157,16 @@ PirateRadio {
 	scanFiles {
 		("scanning files in "++fileLocation).postln;
 		filePaths = PathName.new(fileLocation).files;
-		// calculate the new number of files per stream
-		filesPerStream=((filePaths.size/numStreams).floor).asInteger;
-		("will have "++filesPerStream++" files per stream").postln;
+
+		// tell each station the available file paths and how many total
+		// each station will determine which file path index to start and stop
+		// based on its id. for example, the first station of N stations will
+		// play files with index in [0,M files/N)
+		(0..(numStreams-1)).do({ arg i;
+			streamPlayers[i].setFilePaths(
+				filePaths,
+				(((filePaths.size-1)/numStreams).floor).asInteger
+		)});
 	}
 
 	// set the dial position
@@ -198,10 +181,10 @@ PirateRadio {
 		streamPlayers[i].setBand(band,bandwidth);
 	}
 
-	// playFile interrupts a broadcast of staiton i to play that file
-	playFile {
+	// setNextFile queues up a particular file for a station
+	setNextFile {
 		arg i,fname;
-		streamPlayers[i].playFile(-1,fname);
+		streamPlayers[i].setNextFile(fname);
 	}
 
 	// set an effect parameter
@@ -262,17 +245,23 @@ PradDialController {
 
 PradStreamPlayer {
 	// streaming buffer(s) and synth(s)..
-	// TODO: future (probably want 2x of each, to cue/crossfade)
 	var <id;
-	var <buf;
-	var <synth;
 	var <band;
 	var <bandwidth;
+	var <bufs;
+	var <synths;
+	var <swap;
 	var <server;
 	var <outBus;
 	var <outStrengthBus;
 	var <inDialBus;
 	var <currentSndID;
+	var <crossfade;
+	var <filePaths;
+	var <fileIndexCurrent;
+	var <fileIndexStart;
+	var <fileIndexEnd;
+	var <fileSpecial;
 
 	*new {
 		arg idArg, serverArg, outBusArg, outStrengthBusArg, inDialBusArg;
@@ -280,7 +269,6 @@ PradStreamPlayer {
 	}
 
 	init {
-		// (minor) WTF naming: wasn't sure whether I could have a class variable named the same thing as an arg
 		arg idArg, serverArg, outBusArg, outStrengthBusArg, inDialBusArg;
 		("initializing station "++idArg).postln;
 		id=idArg;
@@ -288,33 +276,75 @@ PradStreamPlayer {
 		outBus=outBusArg;
 		outStrengthBus=outStrengthBusArg;
 		inDialBus=inDialBusArg;
-		// WTF: use a dummy synth so we can replace it thus keeping the order of buses intact
-		synth = {
-			Silent.ar(1);
-		}.play(target:server, addAction:\addToTail);
+		swap = 0;
+		crossfade=1;
+		fileIndexCurrent=(-1);
+		synths=Array.newClear(2);
+		bufs=Array.newClear(2);
+		//  use a dummy synth so we can replace it thus keeping the order of buses intact
+		(0..1).do({
+			arg i;
+			("creating dummy "++i).postln;
+			synths[i]={
+				Silent.ar(1);
+			}.play(target:server, addAction:\addToTail);
+		});
+	}
+
+
+	playNextFile {
+		var nextFile;
+		if (fileSpecial.isNil,{
+			fileIndexCurrent=fileIndexCurrent+1;
+			if (fileIndexCurrent<fileIndexStart,{
+				fileIndexCurrent=fileIndexStart;
+			});
+			if (fileIndexCurrent>(fileIndexEnd-1),{
+				fileIndexCurrent=fileIndexStart;
+			});
+			if (filePaths[fileIndexCurrent]==nil,{
+				fileIndexCurrent=fileIndexStart;
+			});
+			nextFile=filePaths[fileIndexCurrent];
+		},{
+			nextFile=fileSpecial;
+			fileSpecial=nil;
+		});
+		// tell it to play the next file
+		this.playFile(nextFile);
 	}
 
 	playFile {
-		arg sndid,fname;
+		arg fname;
+		var fnameInfo;
+		var xfade;
 
-		("station "++id++" playing sound "++sndid++ "("++fname.asAbsolutePath++")").postln;
-		// without a snd identifier, then move on next time
-		if (sndid<0,{
-			sndid=currentSndID+1;
-		},{
-			currentSndID=sndid;
+		// swap synths/buffers
+		swap=1-swap;
+
+		("station "++id++" playing file "++fname.asAbsolutePath).postln;
+
+		// get sound file duration
+		fnameInfo=SoundFile.openRead(fname.asAbsolutePath);
+
+		// if the file length is less than crossfade, reconfigure xfade
+		xfade=crossfade;
+		if (xfade>(fnameInfo.duration/3),{
+			xfade=fnameInfo.duration/3;
 		});
 
 		// close the current buffer and queue up the next one
-		if (buf!=nil,{
-			buf.close;
+		if (bufs[swap]!=nil,{
+			bufs[swap].close;
 		});
-		buf=Buffer.cueSoundFile(server,fname.absolutePath);
+		bufs[swap]=Buffer.cueSoundFile(server,fname.absolutePath);
 
 		// replace our current synth with the new one (preserves order)
-		synth = {
-			arg out=0,bufnum=0,synSndID=0,synID=0,ba=0,bw=1;
-			var snd, strength, dial;
+		synths[swap] = {
+			arg out=0,bufnum=0,ba=0,bw=1,xfade=1,duration=1;
+			var snd, strength, dial,env;
+
+			env=EnvGen.ar(Env.new([0,1,1,0],[xfade,duration-xfade-xfade,xfade]));
 
 			bw=Clip.kr(bw,0.01,10);
 
@@ -328,27 +358,52 @@ PradStreamPlayer {
 
 			// TODO: change the rate to match?
 			snd = VDiskIn.ar(2, bufnum);
-			SendTrig.kr(Done.kr(snd),id,sndid);
 
+			// send strength through control bus
 			Out.kr(outStrengthBus, strength);
-			Out.ar(outBus,snd);
-		}.play(target:synth,args:[\ba, band,\bw,bandwidth,\out,outBus.index,\bufnum,buf,\synSndID,id,\synID,sndid],addAction:\addReplace);
+
+			// send crossfaded sound through sound bus
+			Out.ar(outBus,snd*env);
+		}.play(target:synths[swap],args:[
+			\ba, band,\bw,bandwidth,
+			\xfade,xfade,\duration,fnameInfo.duration,
+			\out,outBus.index,\bufnum,bufs[swap]],addAction:\addReplace);
+		// start a clock to queue the next file (before current is done)
+		SystemClock.sched(fnameInfo.duration-xfade, {
+			this.playNextFile;
+			nil
+		});
 	}
+
 
 	setBand {
 		arg ba,bw;
 		band=ba;
 		bandwidth=bw;
-		synth.set(\ba, band,\bw,bandwidth);
+		synths.do({ arg synth; synth.set(\ba, band,\bw,bandwidth); });
+	}
+
+	// setFilePaths will configure the indicies allowed to play through
+	setFilePaths {
+		arg fps,tfiles;
+		var totalFiles;
+		filePaths=fps;
+		totalFiles=tfiles;
+		fileIndexStart=id*totalFiles;
+		fileIndexEnd=fileIndexStart+((id+1)*totalFiles);
+	}
+
+	// setNextFile will override the playlist and queue up specified file next
+	setNextFile {
+		arg fname;
+		fileSpecial=fname;
 	}
 
 	////////////////
 
 	free {
-		synth.free;
-		buf.free;
-		// synths.do({ arg synth; synth.free; });
-		// bufs.do({ arg buf; buf.free; });
+		synths.do({ arg synth; synth.free; });
+		bufs.do({ arg buf; buf.free; });
 	}
 }
 
