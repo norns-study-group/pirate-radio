@@ -8,11 +8,10 @@ function Slider:new(args)
 
 
 
-  -- function slider:redraw()
-  --   print("slider redraw")
-  --   screen.move(slider.x,slider.y)
-  --   screen.rect(slider.x,slider.y,slider.width,slider.height)
-  -- end
+  function slider:redraw()
+     screen.move(slider.x,slider.y)
+     screen.rect(slider.x,slider.y,slider.width,slider.height)
+  end
 
 
 
