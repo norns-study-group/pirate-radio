@@ -1,0 +1,25 @@
+-- required and included files
+
+-- required for multiple files
+MusicUtil = require "musicutil"
+tabutil = require "tabutil"
+
+-- required for flora.lua
+UI = require "ui"
+-- polls = include "flora/lib/polls"
+
+-- required for parameters.lua
+cs = require 'controlspec'
+
+-- required for multiple files
+globals = include "pirate-radio/lib/globals"
+
+encoders_and_keys = include "pirate-radio/lib/encoders_and_keys"
+pirate_radio_pages = include "pirate-radio/lib/pirate_radio_pages"
+
+parameters = include "pirate-radio/lib/parameters"
+radio = include "pirate-radio/lib/radio"
+
+-- components
+AbstractComponent = include "pirate-radio/lib/ui/AbstractComponent"
+Slider = include "pirate-radio/lib/ui/Slider"
