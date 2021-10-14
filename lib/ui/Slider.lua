@@ -8,7 +8,7 @@ function Slider:new(args)
 
 
 
-  function slider:redraw()
+  function slider.redraw()
      screen.move(slider.x,slider.y)
      screen.rect(slider.x,slider.y,slider.width,slider.height)
   end

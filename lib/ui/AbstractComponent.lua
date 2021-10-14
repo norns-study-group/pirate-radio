@@ -9,7 +9,7 @@ function AbstractComponent:new(args)
   ac.width=args.width==nil and 10 or args.width
   ac.height=args.height==nil and 10 or args.height
   
-  function ac:redraw()
+  function ac.redraw()
     -- print("abstract component redraw")
   end
 
