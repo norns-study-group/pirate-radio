@@ -20,6 +20,7 @@ PirateRadio {
 	var <fileLocation;
 	// all the loots
 	var <filePaths;
+	var <filesPerStream;
 
 	//--- busses
 	// array of busses for streams
@@ -34,7 +35,7 @@ PirateRadio {
 	var <dialBus;
 
 	//--- child components
-	var streamPlayers;
+	var <streamPlayers;
 	var noise;
 	var dial;
 	var selector;
@@ -48,6 +49,7 @@ PirateRadio {
 
 	//--------------------
 	//----- class methods
+	var trigSkip=0;
 
 	// most classes have a `*new` method
 	*new {
@@ -68,14 +70,42 @@ PirateRadio {
 
 		server.postln;
 
+		numStreams=2;
+
 		if (fileLocation.isNil, { fileLocation = fileLocationPath; });
 		this.scanFiles;
+
+		// create a file handler trigger
+		// create a trigger function that handles when a synth is finished
+		// and sends it its next file
+		OSCFunc({ arg msg, time;
+			var sndID=0, stationID=0, maxNum=0, startNum=0;
+			[msg, time].postln;
+			// WTF: for some reason the trigger is triggering twice!?
+			if (trigSkip>0,{
+				// station ID
+				stationID=msg[2];
+				// the stream player plays files indexed by [startNum, filesPerStream)
+				startNum=stationID*filesPerStream;
+				// next file number
+				sndID=msg[3].asInteger+1;
+				// if we are at the end of playlist, start over
+				if (sndID>(filesPerStream+startNum-1),{
+					sndID=startNum;
+				});
+				// tell it to play the next file
+				streamPlayers[stationID].playFile(sndID,filePaths[sndID]);
+			});
+			// WTF: see above
+			trigSkip=1-trigSkip;
+		},'/tr', server.addr);
+
 
 		//--------------------
 		//-- create busses
 		// audio buses are stereo
-		numStreams=2;
 
+		// main audio bus for stream
 		streamBusses = Array.fill(numStreams, {
 			Bus.audio(server, 2);
 		});
@@ -86,7 +116,9 @@ PirateRadio {
 
 		// control buses are mono
 
+		// a bus to hold the dial
 		dialBus = Bus.control(server,1);
+
 		// each station outputs its own strength
 		strengthBusses = Array.fill(numStreams, {
 			Bus.control(server, 1);
@@ -103,18 +135,26 @@ PirateRadio {
 		// so, the order of instantation is also the order of execution
 		dial = PradDialController.new(server, dialBus);
 
+		"creating stations".postln;
 		streamPlayers = Array.fill(numStreams, { arg i;
-			PradStreamPlayer.new(server, streamBusses[i], strengthBusses[i], dialBus);
+			PradStreamPlayer.new(i, server, streamBusses[i], strengthBusses[i], dialBus);
 		});
 
+		"creating noise".postln;
 		noise = PradNoise.new(server, noiseBus, dialBus);
 
+		"creating selector".postln;
 		selector = PradStreamSelector.new(server, streamBusses, strengthBusses, noiseBus, outputBus);
 
-		effects = PradEffects.new(server, outputBus);
+		// TODO: more addons...
 
-		saturator = PradStereoBitSaturator.new(server, server, outputBus);
+		// "adding effects".postln;
+		// effects = PradEffects.new(server, outputBus);
 
+		// "adding saturator".postln;
+		// saturator = PradStereoBitSaturator.new(server, server, outputBus);
+
+		"creating output synth".postln;
 		outputSynth = {
 			arg in, out=0, threshold=0.99, lookahead=0.2;
 			var snd;
@@ -122,31 +162,46 @@ PirateRadio {
 			snd = Limiter.ar(snd, threshold, lookahead).clip(-1, 1);
 			Out.ar(0, snd);
 		}.play(target:server, args:[\in, outputBus.index], addAction:\addToTail);
+
+		// WTF: for whatever reason this won't work without a little delay
+		// so I am playing the first file for each station stream in this Routine
+		Routine {
+			1.wait;
+			"initializing stations".postln;
+			streamPlayers.do({ arg syn, i;
+				var sndID=filesPerStream*i;
+				sndID.postln;
+				filePaths[sndID].postln;
+				streamPlayers[i].playFile(sndID,filePaths[sndID].asAbsolutePath);
+			});
+		}.play;
 	}
 
 	// refresh the list of sound files
 	scanFiles {
-		fileLocation.postln;
+		("scanning files in "++fileLocation).postln;
 		filePaths = PathName.new(fileLocation).files;
-		filePaths.postln;
-		///... update the streamPlayers or whatever
+		// calculate the new number of files per stream
+		filesPerStream=((filePaths.size/numStreams).floor).asInteger;
+		("will have "++filesPerStream++" files per stream").postln;
 	}
 
 	// set the dial position
 	setDial {
 		arg value;
 		dial.setDial(value);
-		// now... there is a little issue/question here.
-		// the simplest way to manage the multiple streams is to just have them all running all the time.
-		// but this won't be feasible if there are many streams
-		// it may be better, but def. more complicated,
-		// to have the selector hold references to the streamPlayers themselves,
-		// and pause un-selected streams as appropriate.
 	}
 
+	// setBand will set the band and bandwidth of station i
 	setBand {
 		arg i,band,bandwidth;
 		streamPlayers[i].setBand(band,bandwidth);
+	}
+
+	// playFile interrupts a broadcast of staiton i to play that file
+	playFile {
+		arg i,fname;
+		streamPlayers[i].playFile(-1,fname);
 	}
 
 	// set an effect parameter
@@ -208,22 +263,58 @@ PradDialController {
 PradStreamPlayer {
 	// streaming buffer(s) and synth(s)..
 	// TODO: future (probably want 2x of each, to cue/crossfade)
+	var <id;
 	var <buf;
 	var <synth;
+	var <band;
+	var <bandwidth;
+	var <server;
+	var <outBus;
+	var <outStrengthBus;
+	var <inDialBus;
+	var <currentSndID;
 
 	*new {
-		arg server, outBus, outStrengthBus, inDialBus;
-		^super.new.init(server, outBus, outStrengthBus, inDialBus);
+		arg idArg, serverArg, outBusArg, outStrengthBusArg, inDialBusArg;
+		^super.new.init(idArg, serverArg, outBusArg, outStrengthBusArg, inDialBusArg);
 	}
 
 	init {
-		//////////////////
-		// this one could get a little involved..
-		///////////////////
-		arg server, outBus, outStrengthBus, inDialBus;
+		// (minor) WTF naming: wasn't sure whether I could have a class variable named the same thing as an arg
+		arg idArg, serverArg, outBusArg, outStrengthBusArg, inDialBusArg;
+		("initializing station "++idArg).postln;
+		id=idArg;
+		server=serverArg;
+		outBus=outBusArg;
+		outStrengthBus=outStrengthBusArg;
+		inDialBus=inDialBusArg;
+		// WTF: use a dummy synth so we can replace it thus keeping the order of buses intact
 		synth = {
-			arg band=100, bandwidth=0.5;
+			Silent.ar(1);
+		}.play(target:server, addAction:\addToTail);
+	}
+
+	playFile {
+		arg sndid,fname;
+
+		("station "++id++" playing sound "++sndid++ "("++fname.asAbsolutePath++")").postln;
+		// without a snd identifier, then move on next time
+		if (sndid<0,{
+			sndid=currentSndID+1;
+		},{
+			currentSndID=sndid;
+		});
+
+		// free the current buffer and cue up the next file
+		buf.free;
+		buf=Buffer.cueSoundFile(server,fname.absolutePath);
+
+		// replace our current synth with the new one (preserves order)
+		synth = {
+			arg out=0,bufnum=0,synSndID=0,synID=0,ba=0,bw=1;
 			var snd, strength, dial;
+
+			bw=Clip.kr(bw,0.01,10);
 
 			// dial is control by one
 			dial = In.kr(inDialBus, 1);
@@ -231,35 +322,22 @@ PradStreamPlayer {
 			// strength emulates the "resonance" of a radio
 			// strength is function of the dial position
 			// and this stations band + bandwidth
-			strength=exp(0.5.neg*(((dial-band)/bandwidth)**1).abs);
+			strength=exp(0.5.neg*(((dial-ba)/bw)**2).abs);
 
-			// dummy sound
-			snd = SinOsc.ar(band);
+			// TODO: change the rate to match?
+			snd = VDiskIn.ar(2, bufnum);
+			SendTrig.kr(Done.kr(snd),id,sndid);
 
 			Out.kr(outStrengthBus, strength);
 			Out.ar(outBus,snd);
-		}.play(target:server, addAction:\addToTail);
+		}.play(target:synth,args:[\ba, band,\bw,bandwidth,\out,outBus.index,\bufnum,buf,\synSndID,id,\synID,sndid],addAction:\addReplace);
 	}
-
-	/////////////////
-	// will need various methods to manage playlist, cue sound files
-	// playlist / cued file management might be better done in the owning `PirateRadio`...
-	// .. in which case this guy will also need a reference to its owner,
-	// to inform when current soundfile is runnning out, etc
-
-	fileFinished {
-	}
-
-	pickFromLootPile {
-	}
-
-	outOfLoot {
-	}
-
 
 	setBand {
-		arg band,bandwidth;
-		synth.set(\band, band,\bandwidth,bandwidth);
+		arg ba,bw;
+		band=ba;
+		bandwidth=bw;
+		synth.set(\ba, band,\bw,bandwidth);
 	}
 
 	////////////////
@@ -397,7 +475,7 @@ PradStreamSelector {
 			// mix the sound and noise
 			snd = mix + noise;
 
-		    Out.ar(out, snd);
+			Out.ar(out, snd);
 		}.play(target:server, args:[\out, outBus.index], addAction:\addToTail);
 	}
 
