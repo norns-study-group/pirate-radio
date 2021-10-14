@@ -305,8 +305,10 @@ PradStreamPlayer {
 			currentSndID=sndid;
 		});
 
-		// free the current buffer and cue up the next file
-		buf.free;
+		// close the current buffer and queue up the next one
+		if (buf!=nil,{
+			buf.close;
+		});
 		buf=Buffer.cueSoundFile(server,fname.absolutePath);
 
 		// replace our current synth with the new one (preserves order)
