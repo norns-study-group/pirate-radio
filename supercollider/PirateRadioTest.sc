@@ -3,7 +3,7 @@
 
 (
 // define radio with 2 stations
-p=PirateRadio.new(s,2,"C:\\Users\\zacks\\Desktop\\temp\\shortaudio");
+p=PirateRadio.new(s,2,"/home/zns/Music/short");
 // set band and bandwidth of station 0
 p.setBand(0,94.7,0.1);
 // set band and bandwidth of station 1
