@@ -249,6 +249,7 @@ PradStreamPlayer {
 	var <band;
 	var <bandwidth;
 	var <bufs;
+	var <mp3s;
 	var <synths;
 	var <swap;
 	var <server;
@@ -281,6 +282,7 @@ PradStreamPlayer {
 		fileIndexCurrent=(-1);
 		synths=Array.newClear(2);
 		bufs=Array.newClear(2);
+		mp3s=Array.newClear(2);
 		//  use a dummy synth so we can replace it thus keeping the order of buses intact
 		(0..1).do({
 			arg i;
@@ -336,8 +338,13 @@ PradStreamPlayer {
 		// close the current buffer and queue up the next one
 		if (bufs[swap]!=nil,{
 			bufs[swap].close;
+			mp3s[swap].free;
+			mp3s[swap].finish;
 		});
-		bufs[swap]=Buffer.cueSoundFile(server,fname.absolutePath);
+		mp3s[swap]=MP3(fname.absolutePath);
+		mp3s[swap].start;
+		bufs[swap]=Buffer.cueSoundFile(server,mp3s[swap].fifo);
+		// bufs[swap]=Buffer.cueSoundFile(server,fname.absolutePath);
 
 		// replace our current synth with the new one (preserves order)
 		synths[swap] = {
