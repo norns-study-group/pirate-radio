@@ -369,7 +369,18 @@ PradStreamPlayer {
 			// strength emulates the "resonance" of a radio
 			// strength is function of the dial position
 			// and this stations band + bandwidth
-			strength=exp(0.5.neg*(((dial-ba)/bw)**2).abs);
+			strength=exp(0.5.neg*(((dial-ba)/bw)**1).abs);
+			// random bursts of lost strength
+			strength=Clip.kr(strength-
+				EnvGen.kr(Env.perc(
+					TExpRand.kr(0.1,2,Impulse.kr(0.5)),
+					TExpRand.kr(0.1,2,Impulse.kr(0.5)),
+					TExpRand.kr(0.2,1,Impulse.kr(0.5)),
+					[4,-4]),Dust.kr(1-strength+0.01))
+			);
+			// remove the long tail
+			// set the strength to zero at bandwidth*3
+			strength=Select.kr((dial-ba).abs>(3*bw),[strength,0]);
 
 			// TODO: change the rate to match?
 			snd = VDiskIn.ar(2, bufnum);
@@ -443,12 +454,12 @@ PradNoise {
 
 			///////////////
 			//// radio static
-			snd = BrownNoise.ar(0.2).dup + LPF.ar(Dust.ar(1), LinExp.kr(LFNoise2.kr(0.1),0,1,100, 4000));
+			snd = BrownNoise.ar(0.1).dup + LPF.ar(Dust.ar(1), LinExp.kr(LFNoise2.kr(0.1),0,1,100, 4000));
 			snd = snd + SinOsc.ar(LFNoise2.kr(LinExp.kr(LinLin.kr(LFNoise1.kr(0.5),0,1,50, 100),60,666)),mul:moving);
 			snd = SelectX.ar(moving,[snd,snd.ring1(SinOsc.ar(LFNoise2.kr(LinExp.kr(LinLin.kr(LFNoise1.kr(0.5),0,1,1, 100),60,666))).dup)]);
 			// commented because this is very very high pitched
 			///// whoops, wants a `freq` arg - emb
-			// snd = snd + HenonC.ar(a:LFNoise2.kr(0.2).linlin(-1,1,1.1,1.5).dup);
+			snd = snd + HenonC.ar(SinOsc.kr(0.1).range(900,1250),a:LFNoise2.kr(0.2).linlin(-1,1,1.1,1.5).dup,mul:0.05);
 			//... or whatever
 			////////////////
 
@@ -526,13 +537,14 @@ PradStreamSelector {
 		// also could define the SynthDef explicitly
 		synth = {
 			arg out; // the selection parameter
-			var streams, strengths, noise, mix, snd;
+			var streams, strengths, noise, mix, snd, totalstrength;
 			strengths = strengthBusses.collect({ arg bus;
 				In.kr(bus.index, 1)
 			});
 			streams = streamBusses.collect({ arg bus;
 				In.ar(bus.index, 2)
 			});
+
 
 			noise = In.ar(noiseBus, 2);
 
@@ -542,7 +554,13 @@ PradStreamSelector {
 			}));
 
 			// noise is attenuated by inverse of total strength
-			noise = (1-Clip.kr(Mix.new(strengths.collect({arg s; s}))))*noise;
+			totalstrength=Clip.kr(Mix.new(strengths.collect({arg s; s})));
+
+			// lose frames based on the strength
+			mix=WaveLoss.ar(mix,LinLin.kr(totalstrength,0,1,70,0),100,2);
+
+			// incorporate the noise based on strength
+			noise = (1-totalstrength)*noise;
 
 			// mix the sound and noise
 			snd = mix + noise;
