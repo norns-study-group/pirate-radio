@@ -20,21 +20,27 @@ PirateRadio {
 	var <fileLocation;
 	// all the loots
 	var <filePaths;
+	var <filesPerStream;
 
 	//--- busses
 	// array of busses for streams
 	var <streamBusses;
+	// strength busese for output the strength of the stream
+	var <strengthBusses;
 	// a bus for noise
 	var <noiseBus;
 	// final output bus. effects can be performed on this bus in-place
 	var <outputBus;
-
+	// a control bus for the dial position
+	var <dialBus;
 
 	//--- child components
-	var streamPlayers;
+	var <streamPlayers;
 	var noise;
+	var dial;
 	var selector;
 	var effects;
+	var saturator;
 
 	//--- synths
 
@@ -46,11 +52,11 @@ PirateRadio {
 
 	// most classes have a `*new` method
 	*new {
-		arg server, fileLocation;
+		arg server, streamNum, fileLocation;
 		// this is a common pattern:
 		// construct the superclass, then call our init function on it
 		// (beware that the superclass cannot also have a method named `init`)
-		^super.new.init(server, fileLocation);
+		^super.new.init(server,streamNum, fileLocation);
 	}
 
 
@@ -59,20 +65,40 @@ PirateRadio {
 
 	// initialize a new `PirateRadio` object / allocate resources
 	init {
-		arg server, fileLocation;
+		arg server, streamNum, fileLocationPath;
 
-		if (fileLocation.isNil, { fileLocation = defaultFileLocation; });
-		this.scanFiles;
+		server.postln;
+
+		numStreams=streamNum;
+
+		if (fileLocation.isNil, { fileLocation = fileLocationPath; });
 
 		//--------------------
-		//-- create busses; all of them are stereo
+		//-- create busses
+		// audio buses are stereo
+
+		// main audio bus for stream
 		streamBusses = Array.fill(numStreams, {
 			Bus.audio(server, 2);
 		});
 
+		// noise for that radio-esque noise
 		noiseBus = Bus.audio(server, 2);
 
+		// output bus for holding the final sound
+		// and transfering through various effects
 		outputBus = Bus.audio(server, 2);
+
+		// control buses are mono
+
+		// a bus to hold the dial
+		dialBus = Bus.control(server,1);
+
+		// each station outputs its own strength
+		strengthBusses = Array.fill(numStreams, {
+			Bus.control(server, 1);
+		});
+
 
 		//------------------
 		//-- create synths and components
@@ -82,42 +108,83 @@ PirateRadio {
 		// here we do that in the simplest way:
 		// each component places its synths at the end of the server's node list
 		// so, the order of instantation is also the order of execution
+		"creating dial".postln;
+		dial = PradDialController.new(server, dialBus);
+
+		"creating stations".postln;
 		streamPlayers = Array.fill(numStreams, { arg i;
-			PradStreamPlayer.new(server, streamBusses[i]);
+			PradStreamPlayer.new(i, server, streamBusses[i], strengthBusses[i], dialBus);
 		});
 
-		noise = PradNoise.new(server, noiseBus);
+		"updating stations with files".postln;
+		this.scanFiles;
 
-		selector = PradStreamSelector.new(server, streamBusses, noiseBus, outputBus);
+		"creating noise".postln;
+		noise = PradNoise.new(server, noiseBus, dialBus);
 
-		effects = PradEffects.new(server, outputBus);
+		"creating selector".postln;
+		selector = PradStreamSelector.new(server, streamBusses, strengthBusses, noiseBus, outputBus);
 
+		// "adding effects".postln;
+		// effects = PradEffects.new(server, outputBus);
+
+		// "adding saturator".postln;
+		// saturator = PradStereoBitSaturator.new(server, server, outputBus);
+
+		// TODO: add 10-band equalizer at the end?
+
+		"creating output synth".postln;
 		outputSynth = {
-			arg threshold=0.99, lookahead=0.2;
+			arg in, out=0, threshold=0.99, lookahead=0.2;
 			var snd;
-			snd = In.ar(outputBus, 2);
+			snd = In.ar(in, 2);
 			snd = Limiter.ar(snd, threshold, lookahead).clip(-1, 1);
 			Out.ar(0, snd);
-		}.play(target:server, addAction:\addToTail);
+		}.play(target:server, args:[\in, outputBus.index], addAction:\addToTail);
+
+		// for whatever reason this won't work without a little delay
+		// so I am playing the first file for each station stream in this Routine
+		Routine {
+			1.wait;
+			"starting stations playing".postln;
+			streamPlayers.do({ arg syn, i;
+				streamPlayers[i].playNextFile();
+			});
+		}.play;
 	}
 
 	// refresh the list of sound files
 	scanFiles {
+		("scanning files in "++fileLocation).postln;
 		filePaths = PathName.new(fileLocation).files;
-		///... update the streamPlayers or whatever
+
+		// tell each station the available file paths and how many total
+		// each station will determine which file path index to start and stop
+		// based on its id. for example, the first station of N stations will
+		// play files with index in [0,M files/N)
+		(0..(numStreams-1)).do({ arg i;
+			streamPlayers[i].setFilePaths(
+				filePaths,
+				(((filePaths.size-1)/numStreams).floor).asInteger
+		)});
 	}
 
 	// set the dial position
 	setDial {
 		arg value;
-		noise.setDial(value);
-		selector.setDial(value);
-		// now... there is a little issue/question here.
-		// the simplest way to manage the multiple streams is to just have them all running all the time.
-		// but this won't be feasible if there are many streams
-		// it may be better, but def. more complicated,
-		// to have the selector hold references to the streamPlayers themselves,
-		// and pause un-selected streams as appropriate.
+		dial.setDial(value);
+	}
+
+	// setBand will set the band and bandwidth of station i
+	setBand {
+		arg i,band,bandwidth;
+		streamPlayers[i].setBand(band,bandwidth);
+	}
+
+	// setNextFile queues up a particular file for a station
+	setNextFile {
+		arg i,fname;
+		streamPlayers[i].setNextFile(fname);
 	}
 
 	// set an effect parameter
@@ -139,6 +206,7 @@ PirateRadio {
 		outputBus.free;
 		noiseBus.free;
 		streamBusses.do({ arg bus; bus.free; });
+		strengthBusses.do({ arg bus; bus.free; });
 	}
 }
 
@@ -148,11 +216,9 @@ PirateRadio {
 // supercollier doesn't have namespaces unfortunately (probably in v4)
 // so this is a common pattern: use a silly class-name prefix as a pseudo-namespace
 
-PradStreamPlayer {
-	// streaming buffer(s) and synth(s)..
-	// (probably want 2x of each, to cue/crossfade)
-	var <bufs;
-	var <synths;
+PradDialController {
+	// a simple controller that sets the global "dial"
+	var <synth;
 
 	*new {
 		arg server, outBus;
@@ -160,25 +226,205 @@ PradStreamPlayer {
 	}
 
 	init {
-		//////////////////
-		// this one could get a little involved..
-		///////////////////
+		arg server, outBus;
+		synth = {
+			arg dial;
+			Out.kr(outBus, Lag.kr(dial,0.1));
+		}.play(target:server, addAction:\addToTail);
 	}
 
-	/////////////////
-	// will need various methods to manage playlist, cue sound files
-	// playlist / cued file management might be better done in the owning `PirateRadio`...
-	// .. in which case this guy will also need a reference to its owner,
-	// to inform when current soundfile is runnning out, etc
-
-	fileFinished {
+	setDial {
+		arg value;
+		synth.set(\dial, value);
 	}
 
-	pickFromLootPile {
+	free {
+		synth.free;
+	}
+}
+
+PradStreamPlayer {
+	// streaming buffer(s) and synth(s)..
+	var <id;
+	var <band;
+	var <bandwidth;
+	var <bufs;
+	var <fnames;
+	var <mp3s;
+	var <synths;
+	var <swap;
+	var <server;
+	var <outBus;
+	var <outStrengthBus;
+	var <inDialBus;
+	var <currentSndID;
+	var <crossfade;
+	var <filePaths;
+	var <fileIndexCurrent;
+	var <fileIndexStart;
+	var <fileIndexEnd;
+	var <fileSpecial;
+
+	*new {
+		arg idArg, serverArg, outBusArg, outStrengthBusArg, inDialBusArg;
+		^super.new.init(idArg, serverArg, outBusArg, outStrengthBusArg, inDialBusArg);
 	}
 
-	outOfLoot {
+	init {
+		arg idArg, serverArg, outBusArg, outStrengthBusArg, inDialBusArg;
+		("initializing station "++idArg).postln;
+		id=idArg;
+		server=serverArg;
+		outBus=outBusArg;
+		outStrengthBus=outStrengthBusArg;
+		inDialBus=inDialBusArg;
+		swap = 0;
+		crossfade=1;
+		fileIndexCurrent=(-1);
+		synths=Array.newClear(2);
+		bufs=Array.newClear(2);
+		mp3s=Array.newClear(2);
+		fnames=Array.newClear(2);
+		//  use a dummy synth so we can replace it thus keeping the order of buses intact
+		(0..1).do({
+			arg i;
+			("creating dummy "++i).postln;
+			synths[i]={
+				Silent.ar(1);
+			}.play(target:server, addAction:\addToTail);
+		});
 	}
+
+
+	playNextFile {
+		var nextFile;
+		if (fileSpecial.isNil,{
+			fileIndexCurrent=fileIndexCurrent+1;
+			if (fileIndexCurrent<fileIndexStart,{
+				fileIndexCurrent=fileIndexStart;
+			});
+			if (fileIndexCurrent>(fileIndexEnd-1),{
+				fileIndexCurrent=fileIndexStart;
+			});
+			if (filePaths[fileIndexCurrent]==nil,{
+				fileIndexCurrent=fileIndexStart;
+			});
+			nextFile=filePaths[fileIndexCurrent];
+		},{
+			nextFile=fileSpecial;
+			fileSpecial=nil;
+		});
+		// tell it to play the next file
+		this.playFile(nextFile);
+	}
+
+	playFile {
+		arg fname;
+		var fnameInfo;
+		var xfade;
+
+		// swap synths/buffers
+		swap=1-swap;
+		("station "++id++" playing file "++fname.asAbsolutePath).postln;
+		fnames[swap]=(fname.asAbsolutePath).asString;
+		fnames[swap].postln;
+
+		// get sound file duration
+		fnameInfo=SoundFile.openRead(fnames[swap]);
+
+		// if the file length is less than crossfade, reconfigure xfade
+		xfade=crossfade;
+		if (xfade>(fnameInfo.duration/3),{
+			xfade=fnameInfo.duration/3;
+		});
+
+		// close the current buffer and queue up the next one
+		if (bufs[swap]!=nil,{
+			bufs[swap].close;
+			if (fnames[swap].endsWith(".ogg"),{
+				mp3s[swap].free;
+				mp3s[swap].finish;
+			});
+		});
+		if (fnames[swap].endsWith(".ogg"),{
+			mp3s[swap]=MP3(fname.absolutePath);
+			mp3s[swap].start;
+			bufs[swap]=Buffer.cueSoundFile(server,mp3s[swap].fifo);
+		},{
+			bufs[swap]=Buffer.cueSoundFile(server,fname.absolutePath);
+		});
+
+		// replace our current synth with the new one (preserves order)
+		synths[swap] = {
+			arg out=0,bufnum=0,ba=0,bw=1,xfade=1,duration=1;
+			var snd, strength, dial,env;
+
+			env=EnvGen.ar(Env.new([0,1,1,0],[xfade,duration-xfade-xfade,xfade]));
+
+			bw=Clip.kr(bw,0.01,10);
+
+			// dial is control by one
+			dial = In.kr(inDialBus, 1);
+
+			// strength emulates the "resonance" of a radio
+			// strength is function of the dial position
+			// and this stations band + bandwidth
+			strength=exp(0.5.neg*(((dial-ba)/bw)**1).abs);
+			// random bursts of lost strength
+			strength=Clip.kr(strength-
+				EnvGen.kr(Env.perc(
+					TExpRand.kr(0.1,2,Impulse.kr(0.5)),
+					TExpRand.kr(0.1,2,Impulse.kr(0.5)),
+					TExpRand.kr(0.2,1,Impulse.kr(0.5)),
+					[4,-4]),Dust.kr(1-strength+0.01))
+			);
+			// remove the long tail
+			// set the strength to zero at bandwidth*3
+			strength=Select.kr((dial-ba).abs>(3*bw),[strength,0]);
+
+			// TODO: change the rate to match?
+			snd = VDiskIn.ar(2, bufnum);
+
+			// send strength through control bus
+			Out.kr(outStrengthBus, strength);
+
+			// send crossfaded sound through sound bus
+			Out.ar(outBus,snd*env);
+		}.play(target:synths[swap],args:[
+			\ba, band,\bw,bandwidth,
+			\xfade,xfade,\duration,fnameInfo.duration,
+			\out,outBus.index,\bufnum,bufs[swap]],addAction:\addReplace);
+		// start a clock to queue the next file (before current is done)
+		SystemClock.sched(fnameInfo.duration-xfade, {
+			this.playNextFile;
+			nil
+		});
+	}
+
+
+	setBand {
+		arg ba,bw;
+		band=ba;
+		bandwidth=bw;
+		synths.do({ arg synth; synth.set(\ba, band,\bw,bandwidth); });
+	}
+
+	// setFilePaths will configure the indicies allowed to play through
+	setFilePaths {
+		arg fps,tfiles;
+		var totalFiles;
+		filePaths=fps;
+		totalFiles=tfiles;
+		fileIndexStart=id*totalFiles;
+		fileIndexEnd=fileIndexStart+((id+1)*totalFiles);
+	}
+
+	// setNextFile will override the playlist and queue up specified file next
+	setNextFile {
+		arg fname;
+		fileSpecial=fname;
+	}
+
 	////////////////
 
 	free {
@@ -193,32 +439,35 @@ PradNoise {
 	var <synth;
 
 	*new {
-		arg server, outBus;
-		^super.new.init(server, outBus);
+		arg server, outBus, dialBus;
+		^super.new.init(server, outBus, dialBus);
 	}
 
 	init {
-		arg server, outBus;
+		arg server, outBus, dialBus;
 		synth = {
-			// probably want to vary the noise somehow depending on dial position, yar?
-			arg dial;
+			arg out;
+			var snd, dial, moving;
 
-			var snd;
+			dial = In.kr(dialBus,1);
+			moving = EnvGen.kr(Env.perc(0.1,1),Changed.kr(dial)+Dust.kr(0.1));
 
 			///////////////
-			////
-			snd = BrownNoise.ar(0.2).dup + LPf.ar(Dust.ar(1), LFNoise2.kr(0.1).linexp(100, 4000).dup);
-			snd = snd + SinOsc.ar(LFNoise2.kr(LFNoise1.kr(0.1).linlin(1, 100).linexp(60, 666)));
-			snd = snd.ring1(SinOsc.ar(LFNoise2.kr(LFNoise1.kr(0.1).linlin(1, 100).linexp(60, 666))).dup);
-			snd = snd + HenonC.ar(a:LFNoise2.kr(0.2).linlin(-1,1,1.1,1.5).dup);
+			//// radio static
+			snd = BrownNoise.ar(0.1).dup + LPF.ar(Dust.ar(1), LinExp.kr(LFNoise2.kr(0.1),0,1,100, 4000));
+			snd = snd + SinOsc.ar(LFNoise2.kr(LinExp.kr(LinLin.kr(LFNoise1.kr(0.5),0,1,50, 100),60,666)),mul:moving);
+			snd = SelectX.ar(moving,[snd,snd.ring1(SinOsc.ar(LFNoise2.kr(LinExp.kr(LinLin.kr(LFNoise1.kr(0.5),0,1,1, 100),60,666))).dup)]);
+			// commented because this is very very high pitched
+			///// whoops, wants a `freq` arg - emb
+			snd = snd + HenonC.ar(SinOsc.kr(0.1).range(900,1250),a:LFNoise2.kr(0.2).linlin(-1,1,1.1,1.5).dup,mul:0.05);
 			//... or whatever
 			////////////////
 
 			// force everything down to stereo
 			snd = Mix.new(snd.clump(2));
 
-			Out.ar(outBus, snd);
-		}.play(target:server, addAction:\addToTail);
+			Out.ar(out, snd);
+		}.play(target:server, args:[\out, outBus.index], addAction:\addToTail);
 	}
 
 	setDial {
@@ -246,13 +495,13 @@ PradEffects {
 		// also could define the SynthDef explicitly
 		synth = {
 			// ... whatever args
-			arg chorusRate=0.2, preGain=1.0;
+			arg bus, chorusRate=0.2, preGain=1.0;
 
 			var signal;
 			signal = In.ar(bus, 2);
 
 			////////////////
-			signal = DelayC.ar(signal, delayTime:LFNoise2.kr(chorusRate).linlin(-1,1, 0.01, 0.06));
+			signal = DelayC.ar(signal, delaytime:LFNoise2.kr(chorusRate).linlin(-1,1, 0.01, 0.06));
 			signal = Greyhole.ar(signal);
 			signal = (signal*preGain).distort.distort;
 			//... or whatever
@@ -262,7 +511,7 @@ PradEffects {
 			// so this is how to do an "insert" processor
 			ReplaceOut.ar(bus, signal);
 
-		}.play(target:server addAction:\addToTail);
+		}.play(target:server, args:[\bus, bus.index], addAction:\addToTail);
 	}
 
 
@@ -278,34 +527,46 @@ PradStreamSelector {
 	var <synth;
 
 	*new {
-		arg server, streamBusses, noiseBus, outBus;
-		^super.new.init(server);
+		arg server, streamBusses, strengthBusses, noiseBus, outBus;
+		^super.new.init(server, streamBusses, strengthBusses, noiseBus, outBus);
 	}
 
-	init { arg server, streamBusses, noiseBus, outBus;
+	init { arg server, streamBusses, strengthBusses, noiseBus, outBus;
 		var numStreams = streamBusses.size;
 
 		// also could define the SynthDef explicitly
 		synth = {
-			arg dial; // the selection parameter
-			var streams, noise, mix;
+			arg out; // the selection parameter
+			var streams, strengths, noise, mix, snd, totalstrength;
+			strengths = strengthBusses.collect({ arg bus;
+				In.kr(bus.index, 1)
+			});
 			streams = streamBusses.collect({ arg bus;
 				In.ar(bus.index, 2)
 			});
-			noise =In.ar(noiseBus, 2);
 
 
-			///////////////////////////
-			// mix =  ....
-			//////////////////////////
+			noise = In.ar(noiseBus, 2);
 
-			Out.ar(outBus.index, mix);
-		}.play(target:server, addAction:\addAfter);
-	}
+			// weight sound by strength
+			mix = Mix.new(streams.collect({ arg snd, i;
+				snd * strengths[i]
+			}));
 
-	setDial {
-		arg value;
-		synth.set(\dial, value);
+			// noise is attenuated by inverse of total strength
+			totalstrength=Clip.kr(Mix.new(strengths.collect({arg s; s})));
+
+			// lose frames based on the strength
+			mix=WaveLoss.ar(mix,LinLin.kr(totalstrength,0,1,70,0),100,2);
+
+			// incorporate the noise based on strength
+			noise = (1-totalstrength)*noise;
+
+			// mix the sound and noise
+			snd = mix + noise;
+
+			Out.ar(out, snd);
+		}.play(target:server, args:[\out, outBus.index], addAction:\addToTail);
 	}
 
 	free {
@@ -364,7 +625,7 @@ PradStereoBitSaturator {
 			crush = (x.abs * steps).round * x.sign / steps;
 			exp = Shaper.ar(expandBuf.bufnum, crush);
 			ReplaceOut.ar(bus.index, SelectX.ar(expAmt, [crush, exp]));
-		}.play(target:target, addAction:\addAfter);
+		}.play(target:target, addAction:\addToTail);
 	}
 
 	setParam {
