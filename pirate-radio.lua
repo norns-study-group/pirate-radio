@@ -9,7 +9,7 @@
 --
 -- notes:
 --
---
+-- switch debug == true to false before publishing
 --
 --  todos: 
 --    implement screen_dirty for redrawing components
@@ -23,7 +23,7 @@ include "lib/includes"
 -- init
 ------------------------------
 function init()
-
+  debug = true
   -- set sensitivity of the encoders
   norns.enc.sens(1,6)
   norns.enc.sens(2,6)
@@ -64,8 +64,8 @@ end
 
 
 function cleanup ()
-  redrawtimer.free_all()
-
+  -- redrawtimer.free_all()
+  
   -- add more cleanup code
 end
 

@@ -12,7 +12,7 @@ local enc = function (n, delta)
     end
   elseif n == 2 then 
     if pages.index == 1 then
-
+      radio.dialer:set_pointer_loc(delta)
     elseif pages.index == 2 then
 
     elseif pages.index == 3 then

@@ -7,6 +7,7 @@ page_scroll = function (delta)
 end
 
 local draw_top_nav = function()
+--[[
   screen.level(15)
   screen.stroke()
   screen.rect(0,0,SCREEN_SIZE.x,10)
@@ -32,10 +33,11 @@ local draw_top_nav = function()
     screen.text("page 5")
   end
   -- navigation marks
-  screen.level(0)
+  screen.level(15)
   screen.rect(0,(pages.index-1)/5*10,2,2)
-  screen.fill()
+  screen.stroke()
   screen.update()
+  ]]
 end
 
 local update_pages = function()

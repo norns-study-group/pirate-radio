@@ -28,8 +28,6 @@ function fn.deep_copy(orig, copies)
   return copy
 end
 
-
-
 -------------------------------------------
 -- global variables
 -------------------------------------------
@@ -42,4 +40,9 @@ initializing = true
 screen_dirty = true
 alt_key_active = false
 
+-------------------------------------------
+-- ui component global variables
+-------------------------------------------
+SELECTED_LEVEL_DEFAULT    = 10
+UNSELECTED_LEVEL_DEFAULT  = 3
 
