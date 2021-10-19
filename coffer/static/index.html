@@ -7,17 +7,21 @@
         body{max-width:650px;margin:40px auto;padding:0 10px;}
 
 .preview {
-	margin-top: 2em;
+    margin-top: 2em;
 }
 </style>
 </head>
 
 <body>
+    <form enctype="multipart/form-data" action="/upload-file" method="post">
+        <input type="file" name="files" multiple />
+        <input type="submit" value="upload" />
+    </form>
     <div id="app">
         <div v-for="upload in uploads" class="preview">
             <pre>{{upload}}</pre>
             <audio controls>
-                <source v-bind:src="upload" type="audio/flac">
+                <source v-bind:src="upload" type="audio/ogg">
                 Your browser does not support the audio tag.
             </audio>
         </div>
