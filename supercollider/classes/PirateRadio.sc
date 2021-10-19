@@ -320,8 +320,9 @@ PradStreamPlayer {
 
 	playFile {
 		arg fname;
-		var fnameInfo;
-		var xfade;
+		var p,l;
+		var durationSeconds=1;
+		var xfade=0;
 
 		// swap synths/buffers
 		swap=1-swap;
@@ -330,72 +331,80 @@ PradStreamPlayer {
 		fnames[swap].postln;
 
 		// get sound file duration
-		fnameInfo=SoundFile.openRead(fnames[swap]);
+		p = Pipe.new("ffprobe -i '"++fname.asAbsolutePath++"' -show_format -v quiet | sed -n 's/duration=//p'", "r");            // list directory contents in long format
+		l = p.getLine;                    // get the first line
+		p.close;                    // close the pipe to avoid that nasty buildup
+		l.postln;
 
-		// if the file length is less than crossfade, reconfigure xfade
-		xfade=crossfade;
-		if (xfade>(fnameInfo.duration/3),{
-			xfade=fnameInfo.duration/3;
-		});
-
-		// close the current buffer and queue up the next one
-		if (bufs[swap]!=nil,{
-			bufs[swap].close;
-			if (fnames[swap].endsWith(".ogg"),{
-				mp3s[swap].free;
-				mp3s[swap].finish;
+		// for whatever reason, if file is corrupted then skip it
+		if (l.isNil,{},{
+			durationSeconds=l.asFloat;
+			// if the file length is less than crossfade, reconfigure xfade
+			xfade=crossfade;
+			if (xfade>(durationSeconds/3),{
+				xfade=durationSeconds/3;
 			});
+
+			// close the current buffer and queue up the next one
+			if (bufs[swap]!=nil,{
+				bufs[swap].close;
+				if (fnames[swap].endsWith(".ogg")==true||fnames[swap].endsWith(".mp3")==true,{
+					mp3s[swap].free;
+					mp3s[swap].finish;
+				});
+			});
+			if (fnames[swap].endsWith(".ogg")==true||fnames[swap].endsWith(".mp3")==true,{
+				mp3s[swap]=MP3(fname.absolutePath);
+				mp3s[swap].start;
+				bufs[swap]=Buffer.cueSoundFile(server,mp3s[swap].fifo);
+			},{
+				bufs[swap]=Buffer.cueSoundFile(server,fname.absolutePath);
+			});
+
+			// replace our current synth with the new one (preserves order)
+			synths[swap] = {
+				arg out=0,bufnum=0,ba=0,bw=1,xfade=1,duration=1;
+				var snd, strength, dial,env;
+
+				env=EnvGen.ar(Env.new([0,1,1,0],[xfade,duration-xfade-xfade,xfade]));
+
+				bw=Clip.kr(bw,0.01,10);
+
+				// dial is control by one
+				dial = In.kr(inDialBus, 1);
+
+				// strength emulates the "resonance" of a radio
+				// strength is function of the dial position
+				// and this stations band + bandwidth
+				strength=exp(0.5.neg*(((dial-ba)/bw)**1).abs);
+				// random bursts of lost strength
+				strength=Clip.kr(strength-
+					EnvGen.kr(Env.perc(
+						TExpRand.kr(0.1,2,Impulse.kr(0.5)),
+						TExpRand.kr(0.1,2,Impulse.kr(0.5)),
+						TExpRand.kr(0.2,1,Impulse.kr(0.5)),
+						[4,-4]),Dust.kr(1-strength+0.01))
+				);
+				// remove the long tail
+				// set the strength to zero at bandwidth*3
+				strength=Select.kr((dial-ba).abs>(3*bw),[strength,0]);
+
+				// TODO: change the rate to match?
+				snd = VDiskIn.ar(2, bufnum);
+
+				// send strength through control bus
+				Out.kr(outStrengthBus, strength);
+
+				// send crossfaded sound through sound bus
+				Out.ar(outBus,snd*env);
+			}.play(target:synths[swap],args:[
+				\ba, band,\bw,bandwidth,
+				\xfade,xfade,\duration,durationSeconds,
+				\out,outBus.index,\bufnum,bufs[swap]],addAction:\addReplace);
+
 		});
-		if (fnames[swap].endsWith(".ogg"),{
-			mp3s[swap]=MP3(fname.absolutePath);
-			mp3s[swap].start;
-			bufs[swap]=Buffer.cueSoundFile(server,mp3s[swap].fifo);
-		},{
-			bufs[swap]=Buffer.cueSoundFile(server,fname.absolutePath);
-		});
-
-		// replace our current synth with the new one (preserves order)
-		synths[swap] = {
-			arg out=0,bufnum=0,ba=0,bw=1,xfade=1,duration=1;
-			var snd, strength, dial,env;
-
-			env=EnvGen.ar(Env.new([0,1,1,0],[xfade,duration-xfade-xfade,xfade]));
-
-			bw=Clip.kr(bw,0.01,10);
-
-			// dial is control by one
-			dial = In.kr(inDialBus, 1);
-
-			// strength emulates the "resonance" of a radio
-			// strength is function of the dial position
-			// and this stations band + bandwidth
-			strength=exp(0.5.neg*(((dial-ba)/bw)**1).abs);
-			// random bursts of lost strength
-			strength=Clip.kr(strength-
-				EnvGen.kr(Env.perc(
-					TExpRand.kr(0.1,2,Impulse.kr(0.5)),
-					TExpRand.kr(0.1,2,Impulse.kr(0.5)),
-					TExpRand.kr(0.2,1,Impulse.kr(0.5)),
-					[4,-4]),Dust.kr(1-strength+0.01))
-			);
-			// remove the long tail
-			// set the strength to zero at bandwidth*3
-			strength=Select.kr((dial-ba).abs>(3*bw),[strength,0]);
-
-			// TODO: change the rate to match?
-			snd = VDiskIn.ar(2, bufnum);
-
-			// send strength through control bus
-			Out.kr(outStrengthBus, strength);
-
-			// send crossfaded sound through sound bus
-			Out.ar(outBus,snd*env);
-		}.play(target:synths[swap],args:[
-			\ba, band,\bw,bandwidth,
-			\xfade,xfade,\duration,fnameInfo.duration,
-			\out,outBus.index,\bufnum,bufs[swap]],addAction:\addReplace);
 		// start a clock to queue the next file (before current is done)
-		SystemClock.sched(fnameInfo.duration-xfade, {
+		SystemClock.sched(durationSeconds-xfade, {
 			this.playNextFile;
 			nil
 		});
@@ -495,10 +504,11 @@ PradEffects {
 		// also could define the SynthDef explicitly
 		synth = {
 			// ... whatever args
-			arg bus, chorusRate=0.2, preGain=1.0;
+			arg bus, chorusRate=0.2, preGain=1.0,
+			band1,band2,band3,band4,band5,band6,band7,band8,band9,band10;
 
-			var signal;
-			signal = In.ar(bus, 2);
+			var snd;
+			snd = In.ar(bus, 2);
 
 			// 10-band equalizer
 			snd = BPeakEQ.ar(snd,60,db:band1);
@@ -513,15 +523,15 @@ PradEffects {
 			snd = BPeakEQ.ar(snd,16000,db:band10);
 
 			////////////////
-			signal = DelayC.ar(signal, delaytime:LFNoise2.kr(chorusRate).linlin(-1,1, 0.01, 0.06));
-			signal = Greyhole.ar(signal);
-			signal = (signal*preGain).distort.distort;
+			snd = DelayC.ar(snd, delaytime:LFNoise2.kr(chorusRate).linlin(-1,1, 0.01, 0.06));
+			snd = Greyhole.ar(snd);
+			snd = (snd*preGain).distort.distort;
 			//... or whatever
 			///////////
 
 			// `ReplaceOut` overwrites the bus contents (unlike `Out` which mixes)
 			// so this is how to do an "insert" processor
-			ReplaceOut.ar(bus, signal);
+			ReplaceOut.ar(bus, snd);
 
 		}.play(target:server, args:[\bus, bus.index], addAction:\addToTail);
 	}
