@@ -23,3 +23,4 @@ radio = include "pirate-radio/lib/radio"
 -- components
 AbstractComponent = include "pirate-radio/lib/ui/AbstractComponent"
 Slider = include "pirate-radio/lib/ui/Slider"
+SliderGroup = include "pirate-radio/lib/ui/SliderGroup"

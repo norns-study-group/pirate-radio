@@ -55,8 +55,10 @@ end
 function redraw_timer_init()
   redrawtimer = metro.init(function() 
     local menu_status = norns.menu.status()
-    if menu_status == false and initializing == false then
+    if menu_status == false and initializing == false and screen_dirty == true then
       pirate_radio_pages.update_pages()
+      screen_dirty = false
+      
     end
   end, SCREEN_FRAMERATE, -1)
   redrawtimer:start()  

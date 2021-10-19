@@ -11,6 +11,7 @@ function AbstractComponent:new(args)
   ac.selected = args.selected and args.selected or false
   ac.selected_level=args.selected_level==nil and SELECTED_LEVEL_DEFAULT or args.selected_level
   ac.unselected_level=args.unselected_level==nil and UNSELECTED_LEVEL_DEFAULT or args.unselected_level
+  ac.visible=args.visible==nil and true or args.visible
   
   function ac:get_selected()
     return self.selected
