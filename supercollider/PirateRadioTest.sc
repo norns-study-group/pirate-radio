@@ -10,10 +10,26 @@ p.setBand(0,94.7,0.5);
 p.setBand(1,98.6,0.5);
 )
 
+
+// make a mouse dial
+(
+{
+	var m;
+	m=MouseX.kr(90,102);
+	SendTrig.kr(Impulse.kr(10),0,m);
+	Silent.ar(2);
+}.play;
+o.free;
+o = OSCFunc({ arg msg, time;
+	p.setDial(msg[3].postln);
+},'/tr', s.addr);
+)
+
+
 // change the dial to different stations
-p.setDial(94.8); // no station
+p.setDial(94.9); // no station
 p.setDial(94.6); // station "0"
-p.setDial(98.65); // station "1"
+p.setDial(98.6); // station "1"
 
 // interrupt station broadcast with a file (afte rwhich it continues)
 // (useful for shoutouts)

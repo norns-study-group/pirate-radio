@@ -383,11 +383,13 @@ PradStreamPlayer {
 						TExpRand.kr(0.1,2,Impulse.kr(0.5)),
 						TExpRand.kr(0.1,2,Impulse.kr(0.5)),
 						TExpRand.kr(0.2,1,Impulse.kr(0.5)),
-						[4,-4]),Dust.kr(1-strength+0.01))
+						[4,-4]),Dust.kr(1-strength+SinOsc.kr(Rand(0.01,0.1)).range(0.01,0.05)))
 				);
 				// remove the long tail
 				// set the strength to zero at bandwidth*3
 				strength=Select.kr((dial-ba).abs>(3*bw),[strength,0]);
+				// if its close, set it to 1
+				strength=Select.kr((dial-ba).abs<0.001,[strength,1]);
 
 				// TODO: change the rate to match?
 				snd = VDiskIn.ar(2, bufnum);
@@ -579,7 +581,7 @@ PradStreamSelector {
 			totalstrength=Clip.kr(Mix.new(strengths.collect({arg s; s})));
 
 			// lose frames based on the strength
-			mix=WaveLoss.ar(mix,LinLin.kr(totalstrength,0,1,70,0),100,2);
+			mix=WaveLoss.ar(mix,LinLin.kr(totalstrength,0,1,90,0),100,2);
 
 			// incorporate the noise based on strength
 			noise = (1-totalstrength)*noise;
