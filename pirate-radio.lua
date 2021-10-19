@@ -32,7 +32,8 @@ function init()
   pages = UI.Pages.new(1, NUM_PAGES)
     
   parameters.add_params()
-  radio.init()
+  tuner.init()
+  eq.init()
   redraw_timer_init()
   
   initializing = false

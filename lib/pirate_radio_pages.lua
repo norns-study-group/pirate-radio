@@ -2,53 +2,31 @@
 
 
 page_scroll = function (delta)
-  print("scroll",delta)
   pages:set_index_delta(util.clamp(delta, -1, 1), false)
 end
 
-local draw_top_nav = function()
---[[
-  screen.level(15)
-  screen.stroke()
-  screen.rect(0,0,SCREEN_SIZE.x,10)
-  screen.fill()
-  screen.level(0)
-  screen.move(4,7)
-
-  local nav_text
-  if pages.index == 1 then
-    if show_instructions == true then
-      nav_text = "instructions" 
-    else
-      nav_text = radio.get_control_label()
-    end
-    screen.text(nav_text)
-  elseif pages.index == 2 then
-    screen.text("page 2")
-  elseif pages.index == 3 then
-    screen.text("page 3")
-  elseif pages.index == 4 then
-    screen.text("page 4")
-  elseif pages.index == 5 then
-    screen.text("page 5")
-  end
+local draw_main_nav = function()
   -- navigation marks
   screen.level(15)
-  screen.rect(0,(pages.index-1)/5*10,2,2)
-  screen.stroke()
-  screen.update()
-  ]]
+  for i=1,pages.num_pages,1 do
+    local level = i == pages.index and 15 or 5
+    screen.level(level)
+    local x = (8*i)
+    local y = SCREEN_SIZE.y-3
+    screen.move(x+2,y)
+    screen.circle(x,y,3)
+    screen.stroke()
+    
+  end
 end
 
 local update_pages = function()
   if initializing == false then
     screen.clear()
     if pages.index == 1 then
-      -- bounce_balls
-      -- bounce.update()
-      radio:redraw()
+      tuner:redraw()
     elseif pages.index == 2 then
-      
+      eq:redraw()      
     elseif pages.index == 3 then
       
     elseif pages.index == 4 then
@@ -56,11 +34,13 @@ local update_pages = function()
     elseif pages.index == 5 then
       
     end
+
     local menu_status = norns.menu.status()
     
     if menu_status == false then
-      draw_top_nav()
+      draw_main_nav()
     end
+    screen.update()
   end
 end
 

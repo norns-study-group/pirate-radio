@@ -31,18 +31,14 @@ function SliderGroup:new(args)
       local args = {}
       args = fn.deep_copy(sg.slider_args_middle)
       if i>1 then
-        -- args.x = sliders[i-1].x + args.width + sg.margin
         local last_slider = slider
         args.x = sg.slider_args_middle.width and last_slider.x + sg.slider_args_middle.width + sg.margin
-        -- print("args.x",args.x,sg.slider_args_middle.width)
-        -- tab.print(sg.slider_args_middle)
       end
       slider = Slider:new(args)
       table.insert(sg.sliders,slider)
     end
     if sg.slider_args_finish then
       local last_slider = slider
-      print("last_slider",last_slider)
       sg.slider_args_finish.x = sg.slider_args_finish.width and last_slider.x + last_slider.width + sg.margin
       slider = Slider:new(sg.slider_args_finish)
       table.insert(sg.sliders,slider)
@@ -55,15 +51,33 @@ function SliderGroup:new(args)
     end
 
     for i=1,#sg.sliders,1 do
-      print(i, sg.sliders[i].width)
       if sg.orientation == 'v' then
         sg.width = sg.width + sg.sliders[i].width
       else
         sg.height = sg.height + sg.sliders[i].height
       end
     end
+    sg.height = sg.height + 3
   end
   
+  function sg:get_num_sliders()
+    return #self.sliders
+  end
+
+  function sg:select(selected)
+    if selection == 'all' then
+      for i=1,#self.sliders,1 do
+        self.sliders[i].selected = true
+      end
+    elseif selected == 'none' then 
+      for i=1,#self.sliders,1 do
+        self.sliders[i].selected = false
+      end
+    else
+      self.sliders[selected].selected = true
+    end
+  end
+
   function sg:draw_outline()
     -- draw outline
     if sg.border == true then

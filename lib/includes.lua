@@ -18,7 +18,8 @@ encoders_and_keys = include "pirate-radio/lib/encoders_and_keys"
 pirate_radio_pages = include "pirate-radio/lib/pirate_radio_pages"
 
 parameters = include "pirate-radio/lib/parameters"
-radio = include "pirate-radio/lib/radio"
+tuner = include "pirate-radio/lib/tuner"
+eq = include "pirate-radio/lib/eq"
 
 -- components
 AbstractComponent = include "pirate-radio/lib/ui/AbstractComponent"

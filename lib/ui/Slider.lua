@@ -17,33 +17,35 @@ function Slider:new(args)
   slider.border = args.border and args.border or false
   slider.warp = args.warp==nil and 'lin' or args.warp
   
-  -- slider.pointer_loc = o=='h' and slider.x+(slider.width/2)-3 or slider.y+(slider.height/2)-3
   slider.pointer_loc = o=='h' and slider.x+3 or slider.y+3
 
   function slider:set_pointer_loc(delta)
     local o = self.orientation
     -- set variables according to the slider's orientation (horizontal/vertical)
-    local start,size
-    if o == 'h' then
-      start = self.x
-      size = self.width
-    else
-      start = self.y
-      size = self.height
-    end
+    local start = o=='h' and self.x or self.y
 
     -- find the new location of the pointer
     local loc = slider.pointer_loc + delta
     -- constrain the pointer to the edges of the slider
-    local pointer_min = start + 1
-    local pointer_max = o == 'h' and self.x+self.width-5 or self.y+self.height-5
+    local pointer_min = start + 3
+    local pointer_max = o == 'h' and self.x+self.width-8 or self.y+self.height-8
     loc = util.clamp(loc,pointer_min,pointer_max)
 
     -- set pointer_loc to the new location
     self.pointer_loc = loc      
   end
 
+  function slider:get_selected(selected)
+    return self.selected
+  end
+
+  function slider:set_selected(selected)
+    self.selected = selected
+  end
+
   function slider:draw_ticks()
+    screen.level(self.unselected_level)
+
     local o = self.orientation
 
     -- set variables for the line ticks are attached to according to the slider's orientation (horizontal/vertical)
@@ -93,7 +95,6 @@ function Slider:new(args)
     -- draw the tick mark
       screen.move(mark_start[1],mark_start[2])
       screen.line_rel(mark_end[1],mark_end[2])
-      screen.stroke()
       
       if slider.tick_labels then
         -- set the tick text x/y
@@ -107,14 +108,15 @@ function Slider:new(args)
     -- draw a line bisecting the slider
     if o=='h' then
       local line_y = mark_start[2] + (mark_end[2]/2)
-      screen.move(x,line_y)
-      screen.line_rel(size-2,0)
+      screen.move(x+3,line_y)
+      screen.line_rel(size-7,0)
     else
       local line_x = mark_start[1] + (mark_end[1]/2)
-      screen.move(line_x,y)
-      screen.line_rel(0,size-1)
+      screen.move(line_x,y+3)
+      screen.line_rel(0,size-7)
     end
-    
+    screen.stroke()
+
   end
 
   function slider:draw_pointer()
@@ -155,8 +157,6 @@ function Slider:new(args)
   end
 
   function slider:redraw()
-    local level = self.selected and self.selected_level or self.unselected_level
-    screen.level(level)
     self:draw_ticks()
     self:draw_pointer()
     self:draw_outline()

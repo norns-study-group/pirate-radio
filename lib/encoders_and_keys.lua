@@ -13,7 +13,7 @@ local enc = function (n, delta)
   elseif n == 2 then 
     if pages.index == 1 then
     elseif pages.index == 2 then
-
+      eq:select_eq_band(delta)
     elseif pages.index == 3 then
 
     elseif pages.index == 4 then
@@ -23,12 +23,13 @@ local enc = function (n, delta)
     end
   elseif n == 3 then 
     if pages.index == 1 then
-      radio.dialer:set_pointer_loc(delta)
-      for i=1,#radio.eq.sliders,1 do 
-        radio.eq.sliders[i]:set_pointer_loc(delta)
-      end
+      tuner.dialer:set_pointer_loc(delta)
     elseif pages.index == 2 then
-
+      if alt_key_active == false then
+        eq:set_selected_band(delta)
+      else
+        eq:set_all_bands(delta)
+      end 
     elseif pages.index == 3 then
 
     elseif pages.index == 4 then
