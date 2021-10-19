@@ -500,6 +500,18 @@ PradEffects {
 			var signal;
 			signal = In.ar(bus, 2);
 
+			// 10-band equalizer
+			snd = BPeakEQ.ar(snd,60,db:band1);
+			snd = BPeakEQ.ar(snd,170,db:band2);
+			snd = BPeakEQ.ar(snd,310,db:band3);
+			snd = BPeakEQ.ar(snd,600,db:band4);
+			snd = BPeakEQ.ar(snd,1000,db:band5);
+			snd = BPeakEQ.ar(snd,3000,db:band6);
+			snd = BPeakEQ.ar(snd,6000,db:band7);
+			snd = BPeakEQ.ar(snd,12000,db:band8);
+			snd = BPeakEQ.ar(snd,14000,db:band9);
+			snd = BPeakEQ.ar(snd,16000,db:band10);
+
 			////////////////
 			signal = DelayC.ar(signal, delaytime:LFNoise2.kr(chorusRate).linlin(-1,1, 0.01, 0.06));
 			signal = Greyhole.ar(signal);
