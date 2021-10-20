@@ -9,7 +9,16 @@ Engine_PirateRadio : CroneEngine {
 		// `context` is an inherited variable (a CroneAudioContext)
 		var server =  context.server;
 
-		radio = PirateRadio.new(server);
+		radio = PirateRadio.new(server,3,"/home/we/dust/audio/tape");
+		server.sync;
+
+		// set band and bandwidth of station 0
+		radio.setBand(0,94.7,0.5);
+		// set band and bandwidth of station 1
+		radio.setBand(1,98.6,0.5);
+		// set band and bandwidth of station 2
+		radio.setBand(2,81.6,0.8);
+		// etc. how many stations?
 
 		this.addCommand(\dial, "f", {
 			arg msg;

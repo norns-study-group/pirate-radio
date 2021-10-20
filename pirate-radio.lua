@@ -27,7 +27,7 @@ function init()
   -- set sensitivity of the encoders
   norns.enc.sens(1,6)
   norns.enc.sens(2,6)
-  norns.enc.sens(3,6)
+  norns.enc.sens(3,1) -- needs some sensitivity for the tuner
 
   pages = UI.Pages.new(1, NUM_PAGES)
     

@@ -23,7 +23,7 @@ local enc = function (n, delta)
     end
   elseif n == 3 then 
     if pages.index == 1 then
-      tuner.dialer:set_pointer_loc_rel(delta)
+      tuner.dialer:set_pointer_loc_rel(delta/20)
     elseif pages.index == 2 then
       if alt_key_active == false then
         eq:set_selected_band_rel(delta)

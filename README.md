@@ -52,25 +52,12 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 
 Our target launch date be December 31st so we can rrrring in the new year like pirates, arr!
 
-## Treasure map (x marks the spot)
+## Install
 
-- [x] do you even git?
-- [ ] (lua) [ui framework (pages)](https://github.com/norns-study-group/pirate-radio/wiki/UI-Widgets)
-- [ ] (lua) dial station ui
-- [ ] (lua) uploading file
-- [ ] (lua) downloading file
-- [ ] (lua) plunder
-- [ ] (lua) 10-band equalizer ui
-- [ ] (sc) 10-band equalizer
-- [ ] (lua) distancing ui
-- [ ] (sc) distancing
-- [ ] (lua) upcoming events
-- [ ] (backend) server handling uploads
-- [ ] (backend) server handling downloads
-- [ ] (sc) pillage
-- [ ] (lua) weather station (50% there)
-- [ ] (sc) station playback
-- [ ] (sc) noise / interference sound design
-- [ ] (sc) other fx
-- [ ] (lua) radio rewind ui
-- [ ] (sc) radio rewind 
+Make sure you have installed required programs:
+
+```
+apt install vorbis-tools lame ffmpeg
+```
+
+(perhaps this can be done automatically?)

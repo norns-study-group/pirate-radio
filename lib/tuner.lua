@@ -29,6 +29,11 @@ function tuner.build_ui()
     tick_values=tuner_values
   }
   tuner.dialer = Slider:new(dial_slider_args)
+  tuner.dialer.pointer_loc_callback=function(loc)
+    loc=util.linlin(dial_slider_args.x,dial_slider_args.x+dial_slider_args.width,70,150,loc)
+    print("tuner: setting dial to "..loc)
+    engine.dial(loc)
+  end
   table.insert(tuner.components,tuner.dialer)
 end
 
@@ -39,4 +44,5 @@ function tuner:redraw()
     tuner.components[i]:redraw()
   end
 end
+
 return tuner

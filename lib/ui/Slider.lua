@@ -39,7 +39,12 @@ function Slider:new(args)
     loc = util.clamp(loc,slider.pointer_min,slider.pointer_max)
 
     -- set pointer_loc to the new location
-    self.pointer_loc = loc    
+    self.pointer_loc = loc 
+
+    -- run callback with location
+    if self.pointer_loc_callback~=nil then
+      self.pointer_loc_callback(loc)
+    end
   end
 
   function slider:get_selected(selected)
