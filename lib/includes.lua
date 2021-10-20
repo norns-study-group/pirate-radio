@@ -1,5 +1,8 @@
 -- required and included files
 
+-- load the engine
+engine.name="PirateRadio"
+
 -- required for multiple files
 MusicUtil = require "musicutil"
 tabutil = require "tabutil"

@@ -10,7 +10,7 @@ PirateRadio {
 	// the `<` tells SC to create a getter method
 	// (it's useful to at least have getters for everything during development)
 	classvar <numStreams;
-	classvar <defaultFileLocation = "/home/we/dust/audio/pirates";
+	classvar <defaultFileLocation = "/home/we/dust/audio/tape";
 
 	//------------------------
 	//----- instance variables
@@ -156,7 +156,7 @@ PirateRadio {
 	// refresh the list of sound files
 	scanFiles {
 		("scanning files in "++fileLocation).postln;
-		filePaths = PathName.new(fileLocation).files;
+		filePaths = PathName.new(fileLocation).files.scramble;
 
 		// tell each station the available file paths and how many total
 		// each station will determine which file path index to start and stop
@@ -389,7 +389,7 @@ PradStreamPlayer {
 				// set the strength to zero at bandwidth*3
 				strength=Select.kr((dial-ba).abs>(3*bw),[strength,0]);
 				// if its close, set it to 1
-				strength=Select.kr((dial-ba).abs<0.001,[strength,1]);
+				strength=Select.kr((dial-ba).abs<0.02,[strength,1]);
 
 				// TODO: change the rate to match?
 				snd = VDiskIn.ar(2, bufnum);
