@@ -28,6 +28,10 @@ function fn.deep_copy(orig, copies)
   return copy
 end
 
+function fn.set_screen_dirty()
+    clock.sleep(0.1)
+    screen_dirty = true
+end
 -------------------------------------------
 -- global variables
 -------------------------------------------
@@ -45,4 +49,10 @@ alt_key_active = false
 -------------------------------------------
 SELECTED_LEVEL_DEFAULT    = 10
 UNSELECTED_LEVEL_DEFAULT  = 3
+tuner_values = {80,90, 100,110, 120, 140}
+tuner_labels = {80,90, 100,110, 120, 140}
+eq_labels = {-12,0,12}
+eq_values = {-12,0,12}
+
+
 

@@ -25,8 +25,8 @@ function tuner.build_ui()
     border=true,
     selected=true,
     tick_position = 'before',
-    tick_labels={80,90, 100,110, 120, 140},
-    tick_ids={80,90, 100,110, 120, 140}
+    tick_labels=tuner_labels,
+    tick_values=tuner_values
   }
   tuner.dialer = Slider:new(dial_slider_args)
   table.insert(tuner.components,tuner.dialer)

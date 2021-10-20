@@ -28,9 +28,9 @@ function eq:build_ui()
     orientation='v',
     border=false,
     selected=false,
-    tick_labels={-12,0,12},
+    tick_labels=eq_labels,
     tick_position = 'before',
-    tick_ids={-12,0,12}
+    tick_values=eq_values
   }
 
   local eq_middle_args = {
@@ -42,7 +42,7 @@ function eq:build_ui()
     border=false,
     selected=false,
     tick_position = 'center',
-    tick_ids={-12,0,12}
+    tick_values=eq_values
   }
 
   local eq_right_args = {
@@ -53,9 +53,9 @@ function eq:build_ui()
     orientation='v',
     border=false,
     selected=false,
-    tick_labels={-12,0,12},
+    tick_labels=eq_labels,
     tick_position = 'after',
-    tick_ids={-12,0,12}
+    tick_values=eq_values
   }
 
   local slider_group_args={
@@ -70,7 +70,8 @@ function eq:build_ui()
     border = true,
     margin = 2
   }
-
+  self.first_value = eq_middle_args.tick_values[1] 
+  self.last_value = eq_middle_args.tick_values[#eq_middle_args.tick_values]
   self.bands = SliderGroup:new(slider_group_args)
   self.bands:init()
   self.num_bands = self.bands:get_num_sliders()
@@ -81,17 +82,31 @@ function eq:build_ui()
   table.insert(eq.components,eq.bands)
 end
 
-function eq:set_selected_band(delta)
+function eq:set_band(value,band)
+  value = util.clamp(value,self.first_value,self.last_value)
+  local p_min = self.bands.sliders[band].pointer_min
+  local p_max = self.bands.sliders[band].pointer_max
+  value = util.linlin(self.first_value,self.last_value,p_min,p_max,value)
+  self.bands.sliders[band]:set_pointer_loc(value,band)
+end
+
+function eq:set_all_bands(value)
+  for i=1,eq.num_bands,1 do
+      eq.bands.sliders[i]:set_pointer_loc_rel(value)
+  end
+end
+
+function eq:set_selected_band_rel(delta)
   for i=1,eq.num_bands,1 do
     if eq.bands.sliders[i].selected == true then
-      eq.bands.sliders[i]:set_pointer_loc(delta)
+      eq.bands.sliders[i]:set_pointer_loc_rel(delta)
     end
   end
 end
 
-function eq:set_all_bands(delta)
+function eq:set_all_bands_rel(delta)
   for i=1,eq.num_bands,1 do
-      eq.bands.sliders[i]:set_pointer_loc(delta)
+      eq.bands.sliders[i]:set_pointer_loc_rel(delta)
   end
 end
 

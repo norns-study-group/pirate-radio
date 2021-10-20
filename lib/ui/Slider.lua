@@ -12,27 +12,34 @@ function Slider:new(args)
   slider.orientation = args.orientation==nil and 'h' or args.orientation
   slider.tick_length = args.tick_length==nil and 5 or args.tick_length
   slider.tick_labels = args.tick_labels
-  slider.tick_ids = args.tick_ids==nil and {20,40,60,80} or args.tick_ids
+  slider.tick_values = args.tick_values==nil and {20,40,60,80} or args.tick_values
   slider.tick_position = args.tick_position
   slider.border = args.border and args.border or false
   slider.warp = args.warp==nil and 'lin' or args.warp
   
+  slider.pointer_min = slider.orientation=='h' and slider.x or slider.y + 3
+  slider.pointer_max = slider.orientation=='h' and slider.x+slider.width-8 or slider.y+slider.height-8
+
   slider.pointer_loc = o=='h' and slider.x+3 or slider.y+3
 
-  function slider:set_pointer_loc(delta)
+
+  function slider:set_pointer_loc(value)
+    -- set pointer_loc to the new location
+    self.pointer_loc = value
+    clock.run(fn.set_screen_dirty)
+  end
+
+  function slider:set_pointer_loc_rel(delta)
     local o = self.orientation
-    -- set variables according to the slider's orientation (horizontal/vertical)
-    local start = o=='h' and self.x or self.y
 
     -- find the new location of the pointer
     local loc = slider.pointer_loc + delta
     -- constrain the pointer to the edges of the slider
-    local pointer_min = start + 3
-    local pointer_max = o == 'h' and self.x+self.width-8 or self.y+self.height-8
-    loc = util.clamp(loc,pointer_min,pointer_max)
+    -- set variables according to the slider's orientation (horizontal/vertical)
+    loc = util.clamp(loc,slider.pointer_min,slider.pointer_max)
 
     -- set pointer_loc to the new location
-    self.pointer_loc = loc      
+    self.pointer_loc = loc    
   end
 
   function slider:get_selected(selected)
@@ -67,7 +74,7 @@ function Slider:new(args)
     -- set a size variable according to the slider's orientation (horizontal/vertical)
     local size = o=='h' and self.width or self.height
     
-    local stids = slider.tick_ids
+    local stids = slider.tick_values
     local mark_start, mark_end, mark_text_loc
     for i=1,#stids,1 do      
       -- the distance between each mark
