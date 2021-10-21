@@ -66,12 +66,12 @@ function init_midi_16n()
                           eq.last_value, eq.first_value,
                           v)
           eq:set_band(v, slider_id)
-        elseif slider_id == eq.num_bands + 1 then
-
+        elseif slider_id == 16 then
           if prev_pos_eq_all_slider == nil then
             prev_pos_eq_all_slider = v
             return
           end
+
           local delta = prev_pos_eq_all_slider - v
           prev_pos_eq_all_slider = v
           eq:set_all_bands_rel(delta)
