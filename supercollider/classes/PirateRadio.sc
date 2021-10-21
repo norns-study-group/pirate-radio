@@ -227,6 +227,8 @@ PirateRadio {
 		noiseBus.free;
 		streamBusses.do({ arg bus; bus.free; });
 		strengthBusses.do({ arg bus; bus.free; });
+		"pkill -f oggdec".systemCmd;
+		"rm -rf /dev/shm/sc3mp3*".systemCmd;
 	}
 }
 
@@ -249,7 +251,7 @@ PradDialController {
 		arg server, outBus;
 		synth = {
 			arg dial;
-			Out.kr(outBus, Lag.kr(dial,0.1));
+			Out.kr(outBus, Lag.kr(dial,0.01));
 		}.play(target:server, addAction:\addToTail);
 	}
 

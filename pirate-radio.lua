@@ -71,7 +71,8 @@ end
 
 function cleanup ()
   -- redrawtimer.free_all()
-  
+  util.os_capture("pkill -f oggdec")
+  util.os_capture("rm -rf /dev/shm/sc3mp3*")
   -- add more cleanup code
 end
 

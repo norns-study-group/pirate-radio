@@ -9,7 +9,7 @@ Engine_PirateRadio : CroneEngine {
 		// `context` is an inherited variable (a CroneAudioContext)
 		var server =  context.server;
 
-		var numStations=2;
+		var numStations=3;
 		var numLoopingStations=1;
 
 		// start a radio 
@@ -28,6 +28,7 @@ Engine_PirateRadio : CroneEngine {
 
 		// set band and bandwidth of station 2
 		radio.setBand(2,81.6,0.8);
+		radio.setBand(3,86.0,0.5);
 
 		// etc. how many stations?
 

@@ -134,7 +134,7 @@ MP3 {
 	}
 
 	stop {
-		("kill -9 `cat "++fifo++".pid` > /dev/null 2>&1").postln;
+		// ("kill -9 `cat "++fifo++".pid` > /dev/null 2>&1").postln;
 		("kill -9 `cat "++fifo++".pid` > /dev/null 2>&1").systemCmd;
 		pid = nil;
 		playing = false;
