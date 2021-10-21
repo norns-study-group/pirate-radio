@@ -110,7 +110,7 @@ end
 
 function cleanup ()
   -- redrawtimer.free_all()
-  util.os_capture(_path.code.."pirate-radio/supercollider/classes/stopogg.sh &")
+  norns.system_cmd(_path.code.."pirate-radio/supercollider/classes/stopogg.sh &")
   -- add more cleanup code
 end
 
