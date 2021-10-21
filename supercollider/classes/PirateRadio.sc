@@ -289,49 +289,87 @@ PradStreamPlayerLoop {
 
 	playFile {
 		arg fname;
-		var numChannels;
 		("playing "++fname).postln;
 		buf.free;
-		buf=Buffer.read(server,fname);
+		buf=Buffer.read(server,fname,action:{
+			// replace our current synth with the new one (preserves order)
+			if (buf.numChannels>1,{
+				synth = {
+					arg out=0,bufnum=0,ba=0,bw=1,xfade=1,duration=1;
+					var snd, strength, dial,env;
 
-		// replace our current synth with the new one (preserves order)
-		synth = {
-			arg out=0,bufnum=0,ba=0,bw=1,xfade=1,duration=1;
-			var snd, strength, dial,env;
+					// dial is control by one
+					bw=Clip.kr(bw,0.01,10);
+					dial = In.kr(inDialBus, 1);
 
-			// dial is control by one
-			bw=Clip.kr(bw,0.01,10);
-			dial = In.kr(inDialBus, 1);
+					// strength emulates the "resonance" of a radio
+					// strength is function of the dial position
+					// and this stations band + bandwidth
+					strength=exp(0.5.neg*(((dial-ba)/bw)**1).abs);
+					// random bursts of lost strength
+					strength=Clip.kr(strength-
+						EnvGen.kr(Env.perc(
+							TExpRand.kr(0.1,2,Impulse.kr(0.5)),
+							TExpRand.kr(0.1,2,Impulse.kr(0.5)),
+							TExpRand.kr(0.2,1,Impulse.kr(0.5)),
+							[4,-4]),Dust.kr(1-strength+SinOsc.kr(Rand(0.01,0.1)).range(0.01,0.05)))
+					);
+					// remove the long tail
+					// set the strength to zero at bandwidth*3
+					strength=Select.kr((dial-ba).abs>(3*bw),[strength,0]);
+					// if its close, set it to 1
+					strength=Select.kr((dial-ba).abs<0.02,[strength,1]);
 
-			// strength emulates the "resonance" of a radio
-			// strength is function of the dial position
-			// and this stations band + bandwidth
-			strength=exp(0.5.neg*(((dial-ba)/bw)**1).abs);
-			// random bursts of lost strength
-			strength=Clip.kr(strength-
-				EnvGen.kr(Env.perc(
-					TExpRand.kr(0.1,2,Impulse.kr(0.5)),
-					TExpRand.kr(0.1,2,Impulse.kr(0.5)),
-					TExpRand.kr(0.2,1,Impulse.kr(0.5)),
-					[4,-4]),Dust.kr(1-strength+SinOsc.kr(Rand(0.01,0.1)).range(0.01,0.05)))
-			);
-			// remove the long tail
-			// set the strength to zero at bandwidth*3
-			strength=Select.kr((dial-ba).abs>(3*bw),[strength,0]);
-			// if its close, set it to 1
-			strength=Select.kr((dial-ba).abs<0.02,[strength,1]);
+					snd = PlayBuf.ar(2, bufnum, rate:BufRateScale.kr(buf), loop:1);
 
-			snd = PlayBuf.ar(2, bufnum, rate:BufRateScale.kr(buf), loop:1);
-			snd = Pan2.ar(snd);
+					// send strength through control bus
+					Out.kr(outStrengthBus, strength);
 
-			// send strength through control bus
-			Out.kr(outStrengthBus, strength);
+					// send crossfaded sound through sound bus
+					Out.ar(outBus,snd);
+				}.play(target:synth,args:[
+					\ba, band,\bw,bandwidth,
+					\out,outBus.index,\bufnum,buf],addAction:\addReplace);
+			},{
+				synth = {
+					arg out=0,bufnum=0,ba=0,bw=1,xfade=1,duration=1;
+					var snd, strength, dial,env;
 
-			// send crossfaded sound through sound bus
-			Out.ar(outBus,snd);
-		}.play(target:synth,args:[
-			\ba, band,\bw,bandwidth,
-			\out,outBus.index,\bufnum,buf],addAction:\addReplace);
+					// dial is control by one
+					bw=Clip.kr(bw,0.01,10);
+					dial = In.kr(inDialBus, 1);
+
+					// strength emulates the "resonance" of a radio
+					// strength is function of the dial position
+					// and this stations band + bandwidth
+					strength=exp(0.5.neg*(((dial-ba)/bw)**1).abs);
+					// random bursts of lost strength
+					strength=Clip.kr(strength-
+						EnvGen.kr(Env.perc(
+							TExpRand.kr(0.1,2,Impulse.kr(0.5)),
+							TExpRand.kr(0.1,2,Impulse.kr(0.5)),
+							TExpRand.kr(0.2,1,Impulse.kr(0.5)),
+							[4,-4]),Dust.kr(1-strength+SinOsc.kr(Rand(0.01,0.1)).range(0.01,0.05)))
+					);
+					// remove the long tail
+					// set the strength to zero at bandwidth*3
+					strength=Select.kr((dial-ba).abs>(3*bw),[strength,0]);
+					// if its close, set it to 1
+					strength=Select.kr((dial-ba).abs<0.02,[strength,1]);
+
+					snd = PlayBuf.ar(1, bufnum, rate:BufRateScale.kr(buf), loop:1);
+					snd = Pan2.ar(snd,0);
+
+					// send strength through control bus
+					Out.kr(outStrengthBus, strength);
+
+					// send crossfaded sound through sound bus
+					Out.ar(outBus,snd);
+				}.play(target:synth,args:[
+					\ba, band,\bw,bandwidth,
+					\out,outBus.index,\bufnum,buf],addAction:\addReplace);
+			});
+		});
 	}
 
 

@@ -34,6 +34,7 @@ function init()
   parameters.add_params()
   tuner.init()
   eq.init()
+  weather.init()
   redraw_timer_init()
   
   initializing = false

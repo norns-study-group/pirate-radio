@@ -19,8 +19,9 @@ Engine_PirateRadio : CroneEngine {
 		// the first <numLoopingStations> are looping stations
 		// set band and bandwidth of station 0
 		radio.setBand(0,94.7,0.5);
-		radio.setNextFile(0,"/home/we/dust/code/pirate-radio/lib/data/weather.flac")
+		radio.setNextFile(0,"/home/we/dust/code/pirate-radio/lib/data/weather.flac");
 
+		// all other stations go through the playlist
 		// set band and bandwidth of station 1
 		radio.setBand(1,98.6,0.5);
 
@@ -32,6 +33,11 @@ Engine_PirateRadio : CroneEngine {
 		this.addCommand(\dial, "f", {
 			arg msg;
 			radio.setDial(msg[1]);
+		});
+
+		this.addCommand(\setNextFile, "is", {
+			arg msg;
+			radio.setNextFile(msg[1],msg[2]);
 		});
 
 		this.addCommand(\fxParam, "sf", {

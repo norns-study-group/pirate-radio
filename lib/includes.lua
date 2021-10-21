@@ -28,3 +28,6 @@ eq = include "pirate-radio/lib/eq"
 AbstractComponent = include "pirate-radio/lib/ui/AbstractComponent"
 Slider = include "pirate-radio/lib/ui/Slider"
 SliderGroup = include "pirate-radio/lib/ui/SliderGroup"
+
+-- weather!
+weather = include "pirate-radio/lib/weather"
