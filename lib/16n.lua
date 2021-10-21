@@ -147,11 +147,6 @@ _16n.cc_2_slider_id = function(cc)
     end
   end
 
-  -- REVIEW: unusure this is necessary
-  if conf_16n.rot then
-    slider_id = 16 + 1 - slider_id
-  end
-
   return slider_id
 end
 
