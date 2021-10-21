@@ -20,13 +20,13 @@ Engine_PirateRadio : CroneEngine {
 		// set band and bandwidth of station 0
 		// station 0 is used as the weather station in `weather.lua`
 		radio.setBand(0,94.7,0.5);
+		// weather station!
 		radio.setNextFile(0,"/home/we/dust/code/pirate-radio/lib/data/weather.flac");
 
 		// all other stations automatically go through the playlist
 		// set band and bandwidth of station 1
 		radio.setBand(1,98.6,0.5);
-
-		// set band and bandwidth of station 2
+		// set band and bandwidth of more stations...
 		radio.setBand(2,81.6,0.8);
 		radio.setBand(3,86.0,0.5);
 
