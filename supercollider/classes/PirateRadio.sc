@@ -161,6 +161,18 @@ PirateRadio {
 		}.play;
 	}
 
+	// set file location
+	refreshStations {
+		arg fname;
+		fileLocation=fname;
+		this.scanFiles;
+
+		streamPlayers.do({ arg syn, i;
+			streamPlayers[i].stopCurrent();
+			streamPlayers[i].playNextFile();
+		});
+	}
+
 	// refresh the list of sound files
 	scanFiles {
 		("scanning files in "++fileLocation).postln;
@@ -391,6 +403,10 @@ PradStreamPlayerLoop {
 		this.playFile(fname);
 	}
 
+	stopCurrent {
+		// doesn't need to do anything
+	}
+
 	////////////////
 
 	free {
@@ -519,7 +535,7 @@ PradStreamPlayer {
 
 			// replace our current synth with the new one (preserves order)
 			synths[swap] = {
-				arg out=0,bufnum=0,ba=0,bw=1,xfade=1,duration=1;
+				arg out=0,bufnum=0,ba=0,bw=1,xfade=1,duration=1,toggle=1;
 				var snd, strength, dial,env;
 
 				env=EnvGen.ar(Env.new([0,1,1,0],[xfade,duration-xfade-xfade,xfade]));
@@ -551,10 +567,10 @@ PradStreamPlayer {
 				snd = VDiskIn.ar(2, bufnum);
 
 				// send strength through control bus
-				Out.kr(outStrengthBus, strength);
+				Out.kr(outStrengthBus, strength*toggle);
 
 				// send crossfaded sound through sound bus
-				Out.ar(outBus,snd*env);
+				Out.ar(outBus,snd*env*toggle);
 			}.play(target:synths[swap],args:[
 				\ba, band,\bw,bandwidth,
 				\xfade,xfade,\duration,durationSeconds,
@@ -590,6 +606,10 @@ PradStreamPlayer {
 	setNextFile {
 		arg fname;
 		fileSpecial=fname;
+	}
+
+	stopCurrent {
+		synths[swap].set(\toggle,0);
 	}
 
 	////////////////

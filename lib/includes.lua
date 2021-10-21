@@ -31,3 +31,6 @@ SliderGroup = include "pirate-radio/lib/ui/SliderGroup"
 
 -- weather!
 weather = include "pirate-radio/lib/weather"
+
+-- syncing
+sync = include "pirate-radio/lib/sync"

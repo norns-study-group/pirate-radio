@@ -35,6 +35,7 @@ function init()
   tuner.init()
   eq.init()
   weather.init()
+  sync.init()
   redraw_timer_init()
   
   initializing = false
