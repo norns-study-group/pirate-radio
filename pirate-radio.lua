@@ -34,7 +34,7 @@ function init()
   eq.init()
   weather.init()
   sync.init()
-  sync:download()
+  --sync:download()
   redraw_timer_init()
 
   init_midi_16n()
