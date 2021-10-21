@@ -79,7 +79,7 @@ MP3 {
 
 	// Start the LAME command - involving some elastic trickery to work out the PID of the created process.
 	start { |lameopts=""|
-		var cmd, prepids, postpids, diff, cmdname, pipe, line, lines, khz;
+		var cmd, prepids, postpids, diff, cmdname, pipe, line, lines, khz,p,l;
 
 		if(sampleRate.isNil){
 			sampleRate = Server.default.sampleRate;
@@ -128,12 +128,9 @@ MP3 {
 //		});
 		cmd.postln;
 
-		// this is an async process
-		cmd.unixCmd { |res, ppid| 
-			["MP3: started ", res, ppid].postln; 
-			pid=ppid; 
-			playing = true; 
-		};		
+		// this is a synchronous process
+		cmd.systemCmd;
+		playing = true; 
 	}
 
 	stop {
