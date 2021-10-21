@@ -67,11 +67,14 @@ MP3 {
 		});
 
 		// Establish our FIFO
-		fifo = "/tmp/sc3mp3-" ++ this.hash ++ ".fifo";
+		fifo = "/dev/shm/sc3mp3-" ++ this.hash ++ ".fifo";
 		("mkfifo "++fifo).systemCmd;
+
 
 		// Ensure things will be tidied up if the user recompiles
 		ShutDown.add({this.finish});
+
+		this.start;
 	}
 
 	// Start the LAME command - involving some elastic trickery to work out the PID of the created process.
@@ -103,6 +106,7 @@ MP3 {
 			format.switch(
 			\ogg, {
 				cmd = oggdecpath + "--quiet " + lameopts + "\"" ++ path ++ "\" --output" + fifo + "> /dev/null";
+				cmd = "/home/we/dust/code/pirate-radio/supercollider/classes/runogg.sh"+path+fifo;
 				cmdname = "oggdec";
 			},
 			{ // Default is MP3
@@ -122,19 +126,21 @@ MP3 {
 //			("MP3.start completed (PID"+(pid?"unknown")++")").postln;
 //			playing = true;
 //		});
-		pid = cmd.unixCmd;
-		("MP3.start completed (PID"+(pid?"unknown")++")").postln;
-		playing = true;
+		cmd.postln;
+
+		// this is an async process
+		cmd.unixCmd { |res, ppid| 
+			["MP3: started ", res, ppid].postln; 
+			pid=ppid; 
+			playing = true; 
+		};		
 	}
 
 	stop {
-		if(pid.isNil, {
-			"MP3.stop - unable to stop automatically, PID not known".warn;
-		}, {
-			("kill" + pid).systemCmd;
-			pid = nil;
-			playing = false;
-		});
+		("kill -9 `cat "++fifo++".pid` > /dev/null 2>&1").postln;
+		("kill -9 `cat "++fifo++".pid` > /dev/null 2>&1").systemCmd;
+		pid = nil;
+		playing = false;
 	}
 
 	restart {
@@ -145,6 +151,7 @@ MP3 {
 	finish {
 		this.stop;
 		("rm " ++ fifo).systemCmd;
+		("rm " ++ fifo ++ ".pid").systemCmd;
 	}
 
 	// Return a boolean to say whether we're playing or not
@@ -168,7 +175,7 @@ MP3 {
 
 	// Method based on suggestion by Till Bovermann
 	*readToBuffer { |server,path,startFrame = 0,numFrames, action, bufnum, lameopts="" |
-		var tmpPath = "/tmp/sc3mp3read-" ++ this.hash ++ ".wav" ;
+		var tmpPath = "/dev/shm/sc3mp3read-" ++ this.hash ++ ".wav" ;
 		if((MP3.lamepath + "--decode" + lameopts + "\"" ++ path ++ "\"" + tmpPath).systemCmd == 0, {
 			^Buffer.read(server,tmpPath,startFrame,numFrames, {("rm" + tmpPath).unixCmd} <> action, bufnum);
 		}, {

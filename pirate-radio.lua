@@ -36,6 +36,7 @@ function init()
   eq.init()
   weather.init()
   sync.init()
+  --sync:download()
   redraw_timer_init()
   
   initializing = false

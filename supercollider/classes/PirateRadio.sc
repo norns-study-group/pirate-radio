@@ -113,15 +113,14 @@ PirateRadio {
 		dial = PradDialController.new(server, dialBus);
 
 		"creating stations".postln;
-		streamPlayers = Array.fill(numStreams, { arg i;
-			var player;
-			if (i<numLoopers,{
-				player = PradStreamPlayerLoop.new(i, server, streamBusses[i], strengthBusses[i], dialBus);
-			},{
-				// make sure id starts at 0
-				player = PradStreamPlayer.new(i-numLoopers, server, streamBusses[i], strengthBusses[i], dialBus);
-			});
-			player
+		streamPlayers = Array.newClear(numStreams);
+		(0..numLoopers-1).do({ arg i;
+			("creating looping player "++i).postln;
+			streamPlayers[i]=PradStreamPlayerLoop.new(i, server, streamBusses[i], strengthBusses[i], dialBus);
+		});
+		(numLoopers..(numStreams-1)).do({ arg i;
+			("creating streaming player "++(i-numLoopers)).postln;
+			streamPlayers[i]=PradStreamPlayer.new(i-numLoopers, server, streamBusses[i], strengthBusses[i], dialBus);
 		});
 
 		"updating stations with files".postln;
@@ -176,7 +175,7 @@ PirateRadio {
 	// refresh the list of sound files
 	scanFiles {
 		("scanning files in "++fileLocation).postln;
-		filePaths = PathName.new(fileLocation).files;
+		filePaths = PathName.new(fileLocation).files.scramble;
 
 		// tell each station the available file paths and how many total
 		// each station will determine which file path index to start and stop
@@ -423,6 +422,7 @@ PradStreamPlayer {
 	var <bufs;
 	var <fnames;
 	var <mp3s;
+	var <ismp3;
 	var <synths;
 	var <swap;
 	var <server;
@@ -456,6 +456,7 @@ PradStreamPlayer {
 		synths=Array.newClear(2);
 		bufs=Array.newClear(2);
 		mp3s=Array.newClear(2);
+		ismp3=Array.newClear(2);
 		fnames=Array.newClear(2);
 		//  use a dummy synth so we can replace it thus keeping the order of buses intact
 		(0..1).do({
@@ -495,9 +496,11 @@ PradStreamPlayer {
 		var p,l;
 		var durationSeconds=1;
 		var xfade=0;
+		var newSwap=0;
 
 		// swap synths/buffers
 		swap=1-swap;
+		newSwap=swap;
 		("station "++id++" playing file "++fname.asAbsolutePath).postln;
 		fnames[swap]=(fname.asAbsolutePath).asString;
 		fnames[swap].postln;
@@ -519,15 +522,13 @@ PradStreamPlayer {
 
 			// close the current buffer and queue up the next one
 			if (bufs[swap]!=nil,{
-				bufs[swap].close;
-				if (fnames[swap].endsWith(".ogg")==true||fnames[swap].endsWith(".mp3")==true,{
-					mp3s[swap].free;
-					mp3s[swap].finish;
-				});
+				bufs[swap].free;
 			});
 			if (fnames[swap].endsWith(".ogg")==true||fnames[swap].endsWith(".mp3")==true,{
-				mp3s[swap]=MP3(fname.absolutePath);
-				mp3s[swap].start;
+				if (mp3s[swap]!=nil,{
+					mp3s[swap].finish;
+				});
+				mp3s[swap]=MP3(fname.absolutePath,\readfile,\ogg);
 				bufs[swap]=Buffer.cueSoundFile(server,mp3s[swap].fifo);
 			},{
 				bufs[swap]=Buffer.cueSoundFile(server,fname.absolutePath);
@@ -575,13 +576,12 @@ PradStreamPlayer {
 				\ba, band,\bw,bandwidth,
 				\xfade,xfade,\duration,durationSeconds,
 				\out,outBus.index,\bufnum,bufs[swap]],addAction:\addReplace);
-
 		});
 		// start a clock to queue the next file (before current is done)
 		SystemClock.sched(durationSeconds-xfade, {
 			this.playNextFile;
 			nil
-		});
+		});				
 	}
 
 
@@ -617,6 +617,11 @@ PradStreamPlayer {
 	free {
 		synths.do({ arg synth; synth.free; });
 		bufs.do({ arg buf; buf.free; });
+		(0..1).do({arg i;
+			if (mp3s[i]!=nil,{
+				mp3s[i].finish;
+			});
+		});
 	}
 }
 
