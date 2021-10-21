@@ -10,6 +10,7 @@ PirateRadio {
 	// the `<` tells SC to create a getter method
 	// (it's useful to at least have getters for everything during development)
 	classvar <numStreams;
+	classvar <numLoopers;
 	classvar <defaultFileLocation = "/home/we/dust/audio/tape";
 
 	//------------------------
@@ -41,7 +42,6 @@ PirateRadio {
 	var selector;
 	var effects;
 	var saturator;
-
 	//--- synths
 
 	// final output synth
@@ -52,11 +52,11 @@ PirateRadio {
 
 	// most classes have a `*new` method
 	*new {
-		arg server, streamNum, fileLocation;
+		arg server, streamNum, loopNum, fileLocation;
 		// this is a common pattern:
 		// construct the superclass, then call our init function on it
 		// (beware that the superclass cannot also have a method named `init`)
-		^super.new.init(server,streamNum, fileLocation);
+		^super.new.init(server, streamNum, loopNum, fileLocation);
 	}
 
 
@@ -65,11 +65,12 @@ PirateRadio {
 
 	// initialize a new `PirateRadio` object / allocate resources
 	init {
-		arg server, streamNum, fileLocationPath;
+		arg server, streamNum, loopNum, fileLocationPath;
 
 		server.postln;
 
-		numStreams=streamNum;
+		numLoopers=loopNum;
+		numStreams=streamNum+loopNum;
 
 		if (fileLocation.isNil, { fileLocation = fileLocationPath; });
 
@@ -113,7 +114,14 @@ PirateRadio {
 
 		"creating stations".postln;
 		streamPlayers = Array.fill(numStreams, { arg i;
-			PradStreamPlayer.new(i, server, streamBusses[i], strengthBusses[i], dialBus);
+			var player;
+			if (i<numLoopers,{
+				player = PradStreamPlayerLoop.new(i, server, streamBusses[i], strengthBusses[i], dialBus);
+			},{
+				// make sure id starts at 0
+				player = PradStreamPlayer.new(i-numLoopers, server, streamBusses[i], strengthBusses[i], dialBus);
+			});
+			player
 		});
 
 		"updating stations with files".postln;
@@ -156,16 +164,17 @@ PirateRadio {
 	// refresh the list of sound files
 	scanFiles {
 		("scanning files in "++fileLocation).postln;
-		filePaths = PathName.new(fileLocation).files.scramble;
+		filePaths = PathName.new(fileLocation).files;
 
 		// tell each station the available file paths and how many total
 		// each station will determine which file path index to start and stop
 		// based on its id. for example, the first station of N stations will
 		// play files with index in [0,M files/N)
+		// note: "loopers" do not count towards the allocation
 		(0..(numStreams-1)).do({ arg i;
 			streamPlayers[i].setFilePaths(
 				filePaths,
-				(((filePaths.size-1)/numStreams).floor).asInteger
+				(((filePaths.size-1)/(numStreams-numLoopers)).floor).asInteger
 		)});
 	}
 
@@ -240,6 +249,115 @@ PradDialController {
 
 	free {
 		synth.free;
+	}
+}
+
+// PradStreamPlayerLoop constantly loops one file
+// it is basically the same as PradStreamPlayerLoop
+PradStreamPlayerLoop {
+	// streaming buffer(s) and synth(s)..
+	var <band;
+	var <bandwidth;
+	var <server;
+	var <outBus;
+	var <outStrengthBus;
+	var <inDialBus;
+	var <buf;
+	var <synth;
+
+	*new {
+		arg idArg, serverArg, outBusArg, outStrengthBusArg, inDialBusArg;
+		^super.new.init(idArg, serverArg, outBusArg, outStrengthBusArg, inDialBusArg);
+	}
+
+	init {
+		arg idArg, serverArg, outBusArg, outStrengthBusArg, inDialBusArg;
+		server=serverArg;
+		outBus=outBusArg;
+		outStrengthBus=outStrengthBusArg;
+		inDialBus=inDialBusArg;
+		//  use a dummy synth so we can replace it thus keeping the order of buses intact
+		("creating dummy "++idArg).postln;
+		synth={
+			Silent.ar(1);
+		}.play(target:server, addAction:\addToTail);
+	}
+
+
+	playNextFile {
+	}
+
+	playFile {
+		arg fname;
+		var numChannels;
+		("playing "++fname).postln;
+		buf.free;
+		buf=Buffer.read(server,fname);
+
+		// replace our current synth with the new one (preserves order)
+		synth = {
+			arg out=0,bufnum=0,ba=0,bw=1,xfade=1,duration=1;
+			var snd, strength, dial,env;
+
+			// dial is control by one
+			bw=Clip.kr(bw,0.01,10);
+			dial = In.kr(inDialBus, 1);
+
+			// strength emulates the "resonance" of a radio
+			// strength is function of the dial position
+			// and this stations band + bandwidth
+			strength=exp(0.5.neg*(((dial-ba)/bw)**1).abs);
+			// random bursts of lost strength
+			strength=Clip.kr(strength-
+				EnvGen.kr(Env.perc(
+					TExpRand.kr(0.1,2,Impulse.kr(0.5)),
+					TExpRand.kr(0.1,2,Impulse.kr(0.5)),
+					TExpRand.kr(0.2,1,Impulse.kr(0.5)),
+					[4,-4]),Dust.kr(1-strength+SinOsc.kr(Rand(0.01,0.1)).range(0.01,0.05)))
+			);
+			// remove the long tail
+			// set the strength to zero at bandwidth*3
+			strength=Select.kr((dial-ba).abs>(3*bw),[strength,0]);
+			// if its close, set it to 1
+			strength=Select.kr((dial-ba).abs<0.02,[strength,1]);
+
+			snd = PlayBuf.ar(2, bufnum, rate:BufRateScale.kr(buf), loop:1);
+			snd = Pan2.ar(snd);
+
+			// send strength through control bus
+			Out.kr(outStrengthBus, strength);
+
+			// send crossfaded sound through sound bus
+			Out.ar(outBus,snd);
+		}.play(target:synth,args:[
+			\ba, band,\bw,bandwidth,
+			\out,outBus.index,\bufnum,buf],addAction:\addReplace);
+	}
+
+
+	setBand {
+		arg ba,bw;
+		band=ba;
+		bandwidth=bw;
+		synth.set(\ba, band,\bw,bandwidth);
+	}
+
+	// setFilePaths will configure the indicies allowed to play through
+	setFilePaths {
+		arg fps,tfiles;
+	}
+
+	// setNextFile will override the playlist and queue up specified file next
+	setNextFile {
+		arg fname;
+		this.playFile(fname);
+	}
+
+	////////////////
+
+	free {
+		synth.free;
+		buf.free;
 	}
 }
 
