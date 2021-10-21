@@ -23,6 +23,8 @@ _16n.parse_sysex_config_dump = function(sysex_payload)
   local rot = false
   local min_v = 0
   local max_v = 127
+  local raw_min_v = 0
+  local raw_max_v = 0
   local usb_ch_list={}
   local trs_ch_list={}
   local usb_cc_list={}
@@ -42,8 +44,8 @@ _16n.parse_sysex_config_dump = function(sysex_payload)
   end
 
   -- NB: these seem to be wrongly reported...
-  -- min_v = (sysex_payload[i+5] << 8) + sysex_payload[i+4]
-  -- max_v = (sysex_payload[i+7] << 8) + sysex_payload[i+6]
+  raw_min_v = (sysex_payload[i+5] << 8) + sysex_payload[i+4]
+  raw_max_v = (sysex_payload[i+7] << 8) + sysex_payload[i+6]
 
   for fader_i=0, 16-1 do
     local usb_ch = sysex_payload[i+16+fader_i]
@@ -65,6 +67,8 @@ _16n.parse_sysex_config_dump = function(sysex_payload)
     rot = rot,
     min_v = min_v,
     max_v = max_v,
+    raw_min_v = raw_min_v,
+    raw_max_v = raw_max_v,
     usb_ch = usb_ch_list,
     trs_ch = trs_ch_list,
     usb_cc = usb_cc_list,
