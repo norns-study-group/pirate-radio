@@ -35,8 +35,50 @@ function init()
   tuner.init()
   eq.init()
   redraw_timer_init()
-  
+
+  init_midi_16n()
+
   initializing = false
+end
+
+
+--------------------------
+-- 16n
+--------------------------
+function init_midi_16n()
+
+  local prev_pos_eq_all_slider = nil
+
+  _16n.init(function(midi_msg)
+      local slider_id = _16n.cc_2_slider_id(midi_msg.cc)
+      local v = midi_msg.val
+
+      if pages.index == 1 then
+        if slider_id == 1 then
+          v = util.linlin(_16n.min_v(), _16n.max_v(),
+                          tuner.dialer.pointer_min, tuner.dialer.pointer_max,
+                          v)
+          tuner.dialer:set_pointer_loc(v)
+        end
+      elseif pages.index == 2 then
+        if slider_id <= eq.num_bands then
+          v = util.linlin(_16n.min_v(), _16n.max_v(),
+                          eq.last_value, eq.first_value,
+                          v)
+          eq:set_band(v, slider_id)
+        elseif slider_id == 16 then
+          if prev_pos_eq_all_slider == nil then
+            prev_pos_eq_all_slider = v
+            return
+          end
+
+          local delta = prev_pos_eq_all_slider - v
+          prev_pos_eq_all_slider = v
+          eq:set_all_bands_rel(delta)
+          screen_dirty = true
+        end
+      end
+  end)
 end
 
 --------------------------

@@ -92,7 +92,7 @@ end
 
 function eq:set_all_bands(value)
   for i=1,eq.num_bands,1 do
-      eq.bands.sliders[i]:set_pointer_loc_rel(value)
+    eq:set_band(value,i)
   end
 end
 
