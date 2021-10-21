@@ -165,7 +165,10 @@ PirateRadio {
 		arg fname;
 		fileLocation=fname;
 		this.scanFiles;
-
+		// clear system clock to prevent the current sleeping processes from
+		// starting an overlapping stream
+		SystemClock.clear;
+		// stop the current file and play the next
 		streamPlayers.do({ arg syn, i;
 			streamPlayers[i].stopCurrent();
 			streamPlayers[i].playNextFile();
@@ -498,11 +501,9 @@ PradStreamPlayer {
 		var p,l;
 		var durationSeconds=1;
 		var xfade=0;
-		var newSwap=0;
 
 		// swap synths/buffers
 		swap=1-swap;
-		newSwap=swap;
 		("station "++id++" playing file "++fname.asAbsolutePath).postln;
 		fnames[swap]=(fname.asAbsolutePath).asString;
 		fnames[swap].postln;
