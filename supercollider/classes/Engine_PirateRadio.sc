@@ -9,20 +9,42 @@ Engine_PirateRadio : CroneEngine {
 		// `context` is an inherited variable (a CroneAudioContext)
 		var server =  context.server;
 
-		radio = PirateRadio.new(server,3,"/home/we/dust/audio/tape");
+		var numStations=3;
+		var numLoopingStations=1;
+
+		// start a radio 
+		radio = PirateRadio.new(server,numStations,numLoopingStations,"/home/we/dust/audio/tape");
 		server.sync;
 
+		// the first <numLoopingStations> are looping stations
 		// set band and bandwidth of station 0
+		// station 0 is used as the weather station in `weather.lua`
 		radio.setBand(0,94.7,0.5);
+		// weather station!
+		radio.setNextFile(0,"/home/we/dust/code/pirate-radio/lib/data/weather.flac");
+
+		// all other stations automatically go through the playlist
 		// set band and bandwidth of station 1
 		radio.setBand(1,98.6,0.5);
-		// set band and bandwidth of station 2
+		// set band and bandwidth of more stations...
 		radio.setBand(2,81.6,0.8);
+		radio.setBand(3,86.0,0.5);
+
 		// etc. how many stations?
 
 		this.addCommand(\dial, "f", {
 			arg msg;
 			radio.setDial(msg[1]);
+		});
+
+		this.addCommand(\refresh, "s", {
+			arg msg;
+			radio.refreshStations(msg[1].asString);
+		});
+
+		this.addCommand(\setNextFile, "is", {
+			arg msg;
+			radio.setNextFile(msg[1],msg[2]);
 		});
 
 		this.addCommand(\fxParam, "sf", {

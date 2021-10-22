@@ -57,7 +57,9 @@ Our target launch date be December 31st so we can rrrring in the new year like p
 Make sure you have installed required programs:
 
 ```
-apt install vorbis-tools lame ffmpeg
+apt install curl vorbis-tools lame ffmpeg
 ```
+
+(curl needs to be updated as ssl is out of date)
 
 (perhaps this can be done automatically?)

@@ -23,8 +23,15 @@ pirate_radio_pages = include "pirate-radio/lib/pirate_radio_pages"
 parameters = include "pirate-radio/lib/parameters"
 tuner = include "pirate-radio/lib/tuner"
 eq = include "pirate-radio/lib/eq"
+_16n = include "pirate-radio/lib/16n"
 
 -- components
 AbstractComponent = include "pirate-radio/lib/ui/AbstractComponent"
 Slider = include "pirate-radio/lib/ui/Slider"
 SliderGroup = include "pirate-radio/lib/ui/SliderGroup"
+
+-- weather!
+weather = include "pirate-radio/lib/weather"
+
+-- syncing
+sync = include "pirate-radio/lib/sync"
