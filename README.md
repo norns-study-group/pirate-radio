@@ -10,7 +10,7 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 
 - Tyler Etters / `@tyleretters`
 - Ryan Laws / `@ryanlaws`
-- Zeke Becerra / `@zeke_b`
+- Zeke Becerra / `@zeke_b` 
 - Rylee Lyman / `@ryleelyman`
 - Jonathan Snyder / `@jaseknighter`
 - Zebrula Cha / `@catfact`
@@ -18,6 +18,12 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 - Ed Rapley / `@syntheist`
 - Sven Lutz / `@hiqualityh2o`
 - Julien Hughes / `@julienjulienjulien`
+- Richard Garrell / `@aeonerspace`
+- Zak "Salty Dog" Scholl / `@schollz`
+- Alex Toland / `@taubaland`
+- "Roaring" Dan Derks / `@dndrks`
+- Duncan "Pegleg" Geere / `@duncangeere`
+- Jordan "Double Jays" Besly / `@eigen` / `@p3r7`
 
 ## Meeting Minutes
 
@@ -46,3 +52,15 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 ## Goal
 
 Our target launch date be December 31st so we can rrrring in the new year like pirates, arr!
+
+## Install
+
+Make sure you have installed required programs:
+
+```
+apt install curl vorbis-tools lame ffmpeg
+```
+
+(curl needs to be updated as ssl is out of date)
+
+(perhaps this can be done automatically?)
