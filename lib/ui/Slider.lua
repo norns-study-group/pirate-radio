@@ -22,10 +22,19 @@ function Slider:new(args)
 
   slider.pointer_loc = o=='h' and slider.x+3 or slider.y+3
 
+  function slider:get_pointer_loc()
+    return self.pointer_loc 
+  end
 
-  function slider:set_pointer_loc(value)
+  function slider:set_pointer_loc(loc)
     -- set pointer_loc to the new location
-    self.pointer_loc = value
+    self.pointer_loc = loc
+
+    -- run callback with location
+    if self.pointer_loc_callback~=nil then
+      self.pointer_loc_callback(loc)
+    end
+    
     clock.run(fn.set_screen_dirty)
   end
 
@@ -47,7 +56,7 @@ function Slider:new(args)
     end
   end
 
-  function slider:get_selected(selected)
+  function slider:get_selected()
     return self.selected
   end
 

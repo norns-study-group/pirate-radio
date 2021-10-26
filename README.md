@@ -23,6 +23,7 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 - Alex Toland / `@taubaland`
 - "Roaring" Dan Derks / `@dndrks`
 - Duncan "Pegleg" Geere / `@duncangeere`
+- Jordan "Double Jays" Besly / `@eigen` / `@p3r7`
 
 ## Meeting Minutes
 
