@@ -16,11 +16,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/schollz/logger"
 	log "github.com/schollz/logger"
 )
 
-const MaxBytesPerFile = 100000000 // 100 MB
+const MaxBytesPerFile = 2000000000 // 2 GB
 const ContentDirectory = "uploads"
 
 func main() {
@@ -28,8 +27,16 @@ func main() {
 	os.MkdirAll(ContentDirectory, 0644)
 	log.SetLevel("debug")
 	log.Infof("listening on :%d", port)
-	http.HandleFunc("/", handler)
-	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	r := http.NewServeMux()
+	s := &http.Server{
+		Addr: fmt.Sprintf(":%d",port),
+		ReadTimeout: 0,
+		WriteTimeout: 0,
+		IdleTimeout: 0,
+		Handler:r,
+	}
+	r.HandleFunc("/", handler)
+	s.ListenAndServe()
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -273,12 +280,7 @@ func saveFile(tempfname string) (fname2 string, err error) {
 
 func ToOgg(fname string) (fname2 string, err error) {
 	fname2 = strings.TrimSuffix(fname, filepath.Ext(fname)) + ".ogg"
-	cmd := fmt.Sprintf("-y -i %s -ar 48000 %s",
-		fname,
-		fname2,
-	)
-	logger.Debug(cmd)
-	_, err = exec.Command("ffmpeg", strings.Fields(cmd)...).CombinedOutput()
+	_, err = exec.Command("ffmpeg","-y","-i",fname,"-ar","48000",fname2).CombinedOutput()
 	return
 }
 
