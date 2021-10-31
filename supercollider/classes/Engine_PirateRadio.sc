@@ -42,6 +42,11 @@ Engine_PirateRadio : CroneEngine {
 			radio.setBand(msg[1],msg[2],msg[3],msg[4]);
 		});
 
+		this.addCommand(\setFilePaths, "si", {
+			arg msg;
+			radio.setFilePaths(msg[1],msg[2]);
+		});
+
 		this.addCommand(\refresh, "s", {
 			arg msg;
 			radio.refreshStations(msg[1].asString);
