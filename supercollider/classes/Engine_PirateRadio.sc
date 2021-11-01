@@ -37,9 +37,9 @@ Engine_PirateRadio : CroneEngine {
 			radio.setDial(msg[1]);
 		});
 
-		this.addCommand(\setBand, "fifi", {
+		this.addCommand(\setBand, "iff", {
 			arg msg;
-			radio.setBand(msg[1],msg[2],msg[3],msg[4]);
+			radio.setBand(msg[1],msg[2],msg[3]);
 		});
 
 		this.addCommand(\setFilePaths, "si", {
