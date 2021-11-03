@@ -16,9 +16,9 @@
     <pre>XX</pre>
     <div id="app">
         <form enctype="multipart/form-data" action="/uploader" method="post">
-            <input type="checkbox" id="useband" name="useband" v-model="checked">
-            <label for="useband">use band</label>
-            <input type="checkbox" id="dodelete" name="dodelete">
+            <input type="checkbox" id="useband" name="useband" v-model="checked" v-if="!dchecked">
+            <label for="useband" v-if="!dchecked">use band</label>
+            <input type="checkbox" id="dodelete" name="dodelete" v-model="dchecked">
             <label for="dodelete">delete</label><br>
             <input type="number" v-if="checked" id="band" name="band" min=70 max=140 value="88.6" step="0.1" />
             <input type="file" name="files" multiple />
@@ -37,6 +37,7 @@
     var app = new Vue({
         el: '#app',
         data: {
+            dchecked: false,
             checked: false,
             uploads: []
         },
