@@ -38,6 +38,7 @@ func main() {
 		IdleTimeout:  0,
 		Handler:      r,
 	}
+	r.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 	r.HandleFunc("/", handler)
 	s.ListenAndServe()
 }
@@ -67,6 +68,8 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 		return handleBrowserUpload(w, r)
 	} else if r.URL.Path == "/" {
 		return handleServeIndex(w, r, "")
+	} else if strings.HasPrefix(r.URL.Path, "/static/") {
+
 	} else {
 		w.Write([]byte("ok"))
 	}
