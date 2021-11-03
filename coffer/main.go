@@ -130,7 +130,7 @@ func handleCurlUpload(w http.ResponseWriter, r *http.Request) (err error) {
 		return
 	}
 
-	fname2, err := saveFile(tempfile.Name())
+	fname2, err := saveFile(tempfile.Name(), false, "90")
 	if err != nil {
 		fmt.Fprintf(w, "%s\n", err.Error())
 		return
@@ -151,7 +151,8 @@ func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) 
 		}
 	}()
 	band := ""
-	useband := ""
+	useband := false
+	dodelete := false
 	// define some variables used throughout the function
 	// n: for keeping track of bytes read and written
 	// err: for storing errors that need checking
@@ -166,11 +167,6 @@ func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) 
 		errBig = err
 		return
 	}
-
-	if r.FormValue("useband") == "on" {
-		band = r.FormValue("band")
-	}
-	log.Debugf("band value : %s", band)
 
 	// buffer to be used for reading bytes from files
 	chunk := make([]byte, 4096)
@@ -229,13 +225,21 @@ func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) 
 			}
 			band = string(b)
 			continue
+		} else if part.FormName() == "dodelete" {
+			b, err := ioutil.ReadFile(tempfile.Name())
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			dodelete = string(b) == "on"
+			continue
 		} else if part.FormName() == "useband" {
 			b, err := ioutil.ReadFile(tempfile.Name())
 			if err != nil {
 				log.Error(err)
 				return
 			}
-			useband = string(b)
+			useband = string(b) == "on"
 			continue
 		}
 
@@ -243,13 +247,20 @@ func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) 
 		log.Debugf("Uploaded filename: %s", part.FileName())
 		log.Debugf("Uploaded mimetype: %s", part.Header)
 
-		fname2, err := saveFile(tempfile.Name())
+		var fname2 string
+		doing := "uploaded"
+		if dodelete {
+			fname2, err = removeFile(tempfile.Name())
+			doing = "deleted"
+		} else {
+			fname2, err = saveFile(tempfile.Name(), useband, band)
+		}
 		if err != nil {
 			returnText = returnText + fmt.Sprintf("error on '%s': %s\n", part.FileName(), err.Error())
 			log.Debugf("can't save: %s", tempfile.Name())
 		} else {
-			returnText = returnText + fmt.Sprintf("uploaded '%s' as '%s'\n", part.FileName(), fname2)
-			log.Debugf("saved %s", fname2)
+			returnText = returnText + fmt.Sprintf("%s '%s' as '%s'\n", doing, part.FileName(), fname2)
+			log.Debugf("%s %s", doing, fname2)
 		}
 	}
 	return
@@ -306,8 +317,28 @@ func Filemd5Sum(pathToFile string) (result string, err error) {
 	return
 }
 
-func saveFile(tempfname string) (fname2 string, err error) {
-	fname2, err = ToOgg(tempfname)
+func removeFile(tempfname string) (fname2 string, err error) {
+	hash, err := Filemd5Sum(tempfname)
+	if err != nil {
+		return
+	}
+	fileList, err := filepath.Glob("uploads/*.ogg")
+	for _, f := range fileList {
+		fname := filepath.Base(f)
+		if strings.HasPrefix(fname, hash) {
+			fname2 = fname
+			err = os.Remove(fname)
+		}
+	}
+
+	if fname2 == "" {
+		err = fmt.Errorf("could not find file to delete with hash '%s'", hash)
+	}
+	return
+}
+
+func saveFile(tempfname string, useBand bool, band string) (fname2 string, err error) {
+	fname, err := ToOgg(tempfname)
 	if err != nil {
 		log.Debugf("error converting: %s", err.Error())
 		return
@@ -319,10 +350,12 @@ func saveFile(tempfname string) (fname2 string, err error) {
 		return
 	}
 
-	log.Debug(tempfname, fname2)
-
-	err = os.Rename(fname2, path.Join(ContentDirectory, hash+".ogg"))
-	fname2 = hash + ".ogg"
+	fname2 = hash + "-" + time.Now().Format("20060102")
+	if useBand {
+		fname2 = fname2 + "-" + band
+	}
+	fname2 += ".ogg"
+	err = os.Rename(fname, path.Join(ContentDirectory, fname2))
 	log.Debugf("saved %s", fname2)
 	return
 }
