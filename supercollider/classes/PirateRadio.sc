@@ -281,14 +281,16 @@ PradStreamPlayer {
 	playNextFile {
 		var nextFile=nil;
 		if (fileSpecial.isNil,{
-			fileIndexCurrent=fileIndexCurrent+1;
-			if (fileIndexCurrent>(filePaths.size-1),{
-				fileIndexCurrent=0;
+			if (filePaths.size>0,{
+				fileIndexCurrent=fileIndexCurrent+1;
+				if (fileIndexCurrent>(filePaths.size-1),{
+					fileIndexCurrent=0;
+				});
+				if (filePaths[fileIndexCurrent]==nil,{
+					fileIndexCurrent=0;
+				});
+				nextFile=filePaths[fileIndexCurrent];
 			});
-			if (filePaths[fileIndexCurrent]==nil,{
-				fileIndexCurrent=0;
-			});
-			nextFile=filePaths[fileIndexCurrent];
 		},{
 			nextFile=fileSpecial;
 			fileSpecial=nil;
@@ -300,8 +302,8 @@ PradStreamPlayer {
 
 	playFile {
 		arg fname;
-		var p,l;
-		var durationSeconds=1;
+		var p,l,l2;
+		var durationSeconds=1,numChannels=2;
 		var xfade=0;
 
 		// swap synths/buffers
@@ -311,13 +313,20 @@ PradStreamPlayer {
 		fnames[swap].postln;
 
 		// get sound file duration
-		p = Pipe.new("ffprobe -i '"++fname.asAbsolutePath++"' -show_format -v quiet | sed -n 's/duration=//p'", "r");            // list directory contents in long format
+		p = Pipe.new("ffprobe -i '"++fname.asAbsolutePath++"' -show_format -v quiet | sed -n 's/duration=//p'", "r"); 
 		l = p.getLine;                    // get the first line
 		p.close;                    // close the pipe to avoid that nasty buildup
 		l.postln;
 
+		// get sound channels
+		p = Pipe.new("ffprobe -loglevel quiet -i '"++fname.asAbsolutePath++"' -show_streams -select_streams a:0 | grep channels | sed 's/channels=//g'", "r");
+		l2 = p.getLine;                    // get the first line
+		p.close;                    // close the pipe to avoid that nasty buildup
+		("channels: "++l2).postln;
+
 		// for whatever reason, if file is corrupted then skip it
-		if (l.isNil,{},{
+		if (l.isNil||l2.isNil,{},{
+			numChannels=l2.asInteger;
 			durationSeconds=l.asFloat;
 			// if the file length is less than crossfade, reconfigure xfade
 			xfade=crossfade;
@@ -334,9 +343,9 @@ PradStreamPlayer {
 					mp3s[swap].finish;
 				});
 				mp3s[swap]=MP3(fname.absolutePath,\readfile,\ogg);
-				bufs[swap]=Buffer.cueSoundFile(server,mp3s[swap].fifo);
+				bufs[swap]=Buffer.cueSoundFile(server,mp3s[swap].fifo,numChannels:numChannels);
 			},{
-				bufs[swap]=Buffer.cueSoundFile(server,fname.absolutePath);
+				bufs[swap]=Buffer.cueSoundFile(server,fname.absolutePath,numChannels:numChannels);
 			});
 
 			// replace our current synth with the new one (preserves order)
@@ -370,7 +379,7 @@ PradStreamPlayer {
 				strength=Select.kr((dial-ba).abs<0.02,[strength,1]);
 
 				// TODO: change the rate to match?
-				snd = VDiskIn.ar(2, bufnum);
+				snd = VDiskIn.ar(numChannels, bufnum, BufRateScale.kr(bufnum));
 
 				// send strength through control bus
 				Out.kr(outStrengthBus, strength*toggle);
