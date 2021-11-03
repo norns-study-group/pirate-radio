@@ -56,15 +56,15 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 
-	if r.URL.Path == "/upload-file" {
-		return handleBrowserUpload(w, r)
-	} else if r.URL.Path == "/upload" {
+	if r.URL.Path == "/upload" {
 		return handleCurlUpload(w, r)
 	} else if r.URL.Path == "/uploads" {
 		// return a list of files
 		return handleListUploads(w, r)
 	} else if strings.HasSuffix(r.URL.Path, "ogg") {
 		return handleServeFile(w, r)
+	} else if r.URL.Path == "/uploader" {
+		return handleBrowserUpload(w, r)
 	} else if r.URL.Path == "/" {
 		return handleServeIndex(w, r, "")
 	} else {
@@ -79,6 +79,7 @@ func handleServeIndex(w http.ResponseWriter, r *http.Request, data string) (err 
 	if err != nil {
 		return
 	}
+	log.Debugf("serving index with data: %s", data)
 	indexHTML = bytes.Replace(indexHTML, []byte("XX"), []byte(data), -1)
 	w.Write(indexHTML)
 	return
@@ -102,7 +103,6 @@ func handleServeFile(w http.ResponseWriter, r *http.Request) (err error) {
 func handleCurlUpload(w http.ResponseWriter, r *http.Request) (err error) {
 	// Set upload limit
 	r.ParseMultipartForm(120 << 20) // 120 Mb
-
 	file, handler, err := r.FormFile("file")
 	if err != nil {
 		fmt.Fprintf(w, "%s\n", err.Error())
@@ -147,7 +147,8 @@ func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) 
 			errBig = handleServeIndex(w, r, errBig.Error())
 		}
 	}()
-
+	band := ""
+	useband := ""
 	// define some variables used throughout the function
 	// n: for keeping track of bytes read and written
 	// err: for storing errors that need checking
@@ -159,8 +160,14 @@ func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) 
 	var part *multipart.Part
 
 	if mr, err = r.MultipartReader(); err != nil {
+		errBig = err
 		return
 	}
+
+	if r.FormValue("useband") == "on" {
+		band = r.FormValue("band")
+	}
+	log.Debugf("band value : %s", band)
 
 	// buffer to be used for reading bytes from files
 	chunk := make([]byte, 4096)
@@ -183,10 +190,6 @@ func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) 
 			}
 			return
 		}
-		// at this point the filename and the mimetype is known
-		log.Debugf("Uploaded filename: %s", part.FileName())
-		log.Debugf("Uploaded mimetype: %s", part.Header)
-
 		tempfile, err = os.Create(path.Join(os.TempDir(), "upload_"+part.FileName()))
 		if err != nil {
 			errBig = err
@@ -214,6 +217,28 @@ func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) 
 		}
 		log.Debugf("Uploaded filesize: %d bytes", filesize)
 		tempfile.Close()
+
+		if part.FormName() == "band" {
+			b, err := ioutil.ReadFile(tempfile.Name())
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			band = string(b)
+			continue
+		} else if part.FormName() == "useband" {
+			b, err := ioutil.ReadFile(tempfile.Name())
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			useband = string(b)
+			continue
+		}
+
+		log.Debugf("%s: %s", useband, band)
+		log.Debugf("Uploaded filename: %s", part.FileName())
+		log.Debugf("Uploaded mimetype: %s", part.Header)
 
 		fname2, err := saveFile(tempfile.Name())
 		if err != nil {
