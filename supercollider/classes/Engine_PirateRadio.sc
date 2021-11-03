@@ -44,21 +44,28 @@ Engine_PirateRadio : CroneEngine {
 
 		this.addCommand(\addFile, "is", {
 			arg msg;
-			if (radio.noNil,{
-				radio.addFile(msg[1],msg[2]);
+			if (radio.notNil,{
+				radio.addFile(msg[1],msg[2].asString);
+			});
+		});
+
+		this.addCommand(\clearFiles, "i", {
+			arg msg;
+			if (radio.notNil,{
+				radio.clearFiles(msg[1]);
 			});
 		});
 
 		this.addCommand(\setNextFile, "is", {
 			arg msg;
-			if (radio.noNil,{
+			if (radio.notNil,{
 				radio.setNextFile(msg[1],msg[2]);
 			});
 		});
 
 		this.addCommand(\fxParam, "sf", {
 			arg msg;
-			if (radio.noNil,{
+			if (radio.notNil,{
 				radio.setFxParam(msg[1].asSymbol, msg[2]);
 			});
 		});

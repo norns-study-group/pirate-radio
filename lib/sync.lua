@@ -14,7 +14,7 @@ function sync:download()
     print("sync: have "..#files.." files downloaded")
     if #files>2 then 
       print("sync: refreshing engine")
-      engine.refresh(sync.folder)
+      radio.create_playlists_from_pirate_radio()
     end
   end)
 end
@@ -54,6 +54,7 @@ function sync:download_()
   for word in files:gmatch("%S+") do
     table.insert(file_list,word)
   end
+
   return file_list
 end
 

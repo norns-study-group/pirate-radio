@@ -167,6 +167,11 @@ PirateRadio {
 		streamPlayers[i].addFile(fname);
 	}
 
+	clearFiles {
+		arg i;
+		streamPlayers[i].clearFiles;
+	}
+
 	// set an effect parameter
 	setFxParam {
 		arg key, value;
@@ -259,6 +264,7 @@ PradStreamPlayer {
 		outBus=outBusArg;
 		outStrengthBus=outStrengthBusArg;
 		inDialBus=inDialBusArg;
+		filePaths=List();
 		swap = 0;
 		crossfade=1;
 		fileIndexCurrent=(-1);
@@ -378,8 +384,9 @@ PradStreamPlayer {
 				// if its close, set it to 1
 				strength=Select.kr((dial-ba).abs<0.02,[strength,1]);
 
-				// TODO: change the rate to match?
+
 				snd = VDiskIn.ar(numChannels, bufnum, BufRateScale.kr(bufnum));
+				snd = Pan2.ar(snd);
 
 				// send strength through control bus
 				Out.kr(outStrengthBus, strength*toggle);
@@ -410,7 +417,13 @@ PradStreamPlayer {
 	// setFilePaths will configure the indicies allowed to play through
 	addFile {
 		arg fname;
-		filePaths=filePaths.add(fname);
+		if (fname.notNil,{
+			filePaths=filePaths.add(fname);
+		});
+	}
+
+	clearFiles {
+		filePaths=List();
 	}
 
 	// setNextFile will override the playlist and queue up specified file next

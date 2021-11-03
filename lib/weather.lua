@@ -16,7 +16,7 @@ function weather.init()
         io.close(file)
         local yarr=util.os_capture("espeak -k20 -s 120 -m -f /dev/shm/weather.txt -w /dev/shm/weather.wav")      
         -- setup engine
-        engine.setNextFile(0,"/dev/shm/weather.wav")  
+        radio.create_weather_station()
     end)
 end
 

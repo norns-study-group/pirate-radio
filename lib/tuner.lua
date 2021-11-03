@@ -32,7 +32,7 @@ function tuner.build_ui()
   tuner.dialer.pointer_loc_callback=function(loc)
     loc=util.linlin(dial_slider_args.x,dial_slider_args.x+dial_slider_args.width,70,150,loc)
     print("tuner: setting dial to "..loc)
-    engine.dial(loc)
+    radio.set_dial(loc)
   end
   table.insert(tuner.components,tuner.dialer)
 end
