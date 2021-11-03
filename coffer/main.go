@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
@@ -22,6 +23,8 @@ import (
 const MaxBytesPerFile = 2000000000 // 2 GB
 const ContentDirectory = "uploads"
 
+var indexHTML []byte
+
 func main() {
 	port := 8730
 	os.MkdirAll(ContentDirectory, 0644)
@@ -29,11 +32,11 @@ func main() {
 	log.Infof("listening on :%d", port)
 	r := http.NewServeMux()
 	s := &http.Server{
-		Addr: fmt.Sprintf(":%d",port),
-		ReadTimeout: 0,
+		Addr:         fmt.Sprintf(":%d", port),
+		ReadTimeout:  0,
 		WriteTimeout: 0,
-		IdleTimeout: 0,
-		Handler:r,
+		IdleTimeout:  0,
+		Handler:      r,
 	}
 	r.HandleFunc("/", handler)
 	s.ListenAndServe()
@@ -62,11 +65,22 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 		return handleListUploads(w, r)
 	} else if strings.HasSuffix(r.URL.Path, "ogg") {
 		return handleServeFile(w, r)
+	} else if r.URL.Path == "/" {
+		return handleServeIndex(w, r, "")
 	} else {
-		b, _ := ioutil.ReadFile("static/index.html")
-		w.Write(b)
+		w.Write([]byte("ok"))
 	}
 
+	return
+}
+
+func handleServeIndex(w http.ResponseWriter, r *http.Request, data string) (err error) {
+	indexHTML, err = ioutil.ReadFile("static/index.html")
+	if err != nil {
+		return
+	}
+	indexHTML = bytes.Replace(indexHTML, []byte("XX"), []byte(data), -1)
+	w.Write(indexHTML)
 	return
 }
 
@@ -125,6 +139,15 @@ func handleCurlUpload(w http.ResponseWriter, r *http.Request) (err error) {
 }
 
 func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) {
+	returnText := ""
+	defer func() {
+		if errBig == nil {
+			errBig = handleServeIndex(w, r, returnText)
+		} else {
+			errBig = handleServeIndex(w, r, errBig.Error())
+		}
+	}()
+
 	// define some variables used throughout the function
 	// n: for keeping track of bytes read and written
 	// err: for storing errors that need checking
@@ -155,12 +178,8 @@ func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) 
 
 		if part, err = mr.NextPart(); err != nil {
 			if err != io.EOF {
+				errBig = err
 				return
-			} else {
-				http.Redirect(w, r, "/", 301)
-				// log.Debugf("Hit last part of multipart upload")
-				// w.WriteHeader(200)
-				// fmt.Fprintf(w, "Upload completed")
 			}
 			return
 		}
@@ -198,8 +217,10 @@ func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) 
 
 		fname2, err := saveFile(tempfile.Name())
 		if err != nil {
+			returnText = returnText + fmt.Sprintf("error on '%s': %s\n", part.FileName(), err.Error())
 			log.Debugf("can't save: %s", tempfile.Name())
 		} else {
+			returnText = returnText + fmt.Sprintf("uploaded '%s' as '%s'\n", part.FileName(), fname2)
 			log.Debugf("saved %s", fname2)
 		}
 	}
@@ -279,8 +300,19 @@ func saveFile(tempfname string) (fname2 string, err error) {
 }
 
 func ToOgg(fname string) (fname2 string, err error) {
+	isMusic := false
+	for _, v := range []string{"wav", "ogg", "mp3", "m4a", "flac"} {
+		if strings.Contains(fname, v) {
+			isMusic = true
+		}
+	}
+	if !isMusic {
+		err = fmt.Errorf("%s is not music", fname)
+		return
+	}
+	// check if music
 	fname2 = strings.TrimSuffix(fname, filepath.Ext(fname)) + ".ogg"
-	_, err = exec.Command("ffmpeg","-y","-i",fname,"-ar","48000",fname2).CombinedOutput()
+	_, err = exec.Command("ffmpeg", "-y", "-i", fname, "-ar", "48000", fname2).CombinedOutput()
 	return
 }
 
