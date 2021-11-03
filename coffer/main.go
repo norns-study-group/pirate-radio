@@ -67,7 +67,10 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 	} else if r.URL.Path == "/uploader" {
 		return handleBrowserUpload(w, r)
 	} else if r.URL.Path == "/" {
-		return handleServeIndex(w, r, `instructions - 
+		if r.Method == "POST" {
+			return handleBrowserUpload(w, r)
+		} else {
+			return handleServeIndex(w, r, `instructions - 
 upload: click "Browse" and select one or more files. 
 (optional) check "use band" and enter the band. 
 click "upload" to upload those files to the server.
@@ -77,6 +80,7 @@ click "Browse" and select the original files you uploaded.
 click "upload" and those files will be used to determine and 
 delete the server files.
 `)
+		}
 	} else if strings.HasPrefix(r.URL.Path, "/static/") {
 
 	} else {

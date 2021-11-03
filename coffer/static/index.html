@@ -2,7 +2,7 @@
 
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>/uploads</title>
+    <title>🏴‍☠️</title>
     <style>
         body{max-width:650px;margin:40px auto;padding:0 10px;}
 
@@ -15,12 +15,12 @@
 <body>
     <pre>XX</pre>
     <div id="app">
-        <form enctype="multipart/form-data" action="/uploader" method="post">
+        <form enctype="multipart/form-data" action="/" method="post">
             <input type="checkbox" id="useband" name="useband" v-model="checked" v-if="!dchecked">
-            <label for="useband" v-if="!dchecked">use band</label>
-            <input type="checkbox" id="dodelete" name="dodelete" v-model="dchecked">
-            <label for="dodelete">delete</label><br>
-            <input type="number" v-if="checked" id="band" name="band" min=70 max=140 value="88.6" step="0.1" />
+            <label for="useband" v-if="!dchecked">set band</label>&nbsp;
+            <input type="checkbox" id="dodelete" name="dodelete" v-model="dchecked" v-if="!checked">
+            <label for="dodelete"  v-if="!checked">delete</label>
+            <input type="number" v-if="checked" id="band" name="band" min=70 max=140 value="88.6" step="0.1" /><br>
             <input type="file" name="files" multiple />
             <input type="submit" value="upload" />
         </form>
