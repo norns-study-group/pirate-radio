@@ -42,4 +42,6 @@ oscin=include "pirate-radio/lib/oscin"
 -- radio engine
 radio = include "pirate-radio/lib/radio"
 
+-- pre-req installation
+prereqs = include "pirate-radio/lib/prereqs"
 

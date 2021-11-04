@@ -29,6 +29,7 @@ function init()
 
   pages=UI.Pages.new(1,NUM_PAGES)
 
+  prereqs.install()
   parameters.add_params()
   tuner.init()
   eq.init()
@@ -117,15 +118,11 @@ end
 -- that may fail if there is no connection)
 --------------------------
 function debouncer_timer_init()
-  local counter=0
   debouncetimer=metro.init(function()
-    counter = counter + 1
-    if counter>2 then
-      weather.init()
-      -- TODO: check what happens if this fails (i.e. no internet)
-      sync:download()
-      screen_dirty = true
-    end
+    weather.init()
+    -- TODO: check what happens if this fails (i.e. no internet)
+    sync:download()
+    screen_dirty = true
   end,1,-1)
   debouncetimer:start()
 end
