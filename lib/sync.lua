@@ -2,12 +2,17 @@ local sync={}
 
 sync.server="https://coffer.norns.online"
 sync.folder=_path.audio.."pirate-radio"
+sync.downloaded=false
 
 function sync.init()
   print(util.os_capture("mkdir -p "..sync.folder))
 end
 
-function sync:download()
+function sync:download(force)
+  if not force and sync.downloaded then 
+    do return end 
+  end
+  sync.downloaded=true
   -- run async
   clock.run(function()
     local files=sync:download_()

@@ -1,9 +1,10 @@
 local radio = {}
 
 radio.bands={89.8, 94.7, 103.3}
+radio.dial=70
 
 function radio.init()
-    engine.new(#radio.bands) -- setup radio with 3 bands
+    engine.new(#radio.bands) -- setup radio mwith 3 bands
     -- position their bands
     for i,band in ipairs(radio.bands) do
         --              id  band bandwidth
@@ -31,6 +32,7 @@ function radio.create_playlist_from_tapes()
     end
 
     -- add randomly
+    math.randomseed(os.time())
     local files=util.scandir(_path.audio.."tape")
     for _, f in ipairs(files) do
         if string.find(f,".wav") then 
@@ -47,6 +49,9 @@ function radio.create_playlist_from_tapes()
 end
 
 function radio.set_dial(dial)
+    radio.dial=dial
+    -- TODO: this is not quite right....
+    tuner.dialer:set_pointer_loc(util.linlin(70,150,tuner.dialer.pointer_min,tuner.dialer.pointer_min+tuner.dialer.width,dial))
     engine.dial(dial)
 end
 
@@ -65,6 +70,7 @@ function radio.create_playlists_from_pirate_radio()
     end
 
     -- add randomly
+    math.randomseed(os.time())
     local files=util.scandir(_path.audio.."pirate-radio")
     for _, f in ipairs(files) do
         if string.find(f,".ogg") then 
