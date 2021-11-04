@@ -2,19 +2,24 @@ local sync={}
 
 sync.server="https://coffer.norns.online"
 sync.folder=_path.audio.."pirate-radio"
+sync.downloaded=false
 
 function sync.init()
   print(util.os_capture("mkdir -p "..sync.folder))
 end
 
-function sync:download()
+function sync:download(force)
+  if not force and sync.downloaded then 
+    do return end 
+  end
+  sync.downloaded=true
   -- run async
   clock.run(function()
     local files=sync:download_()
     print("sync: have "..#files.." files downloaded")
     if #files>2 then 
       print("sync: refreshing engine")
-      engine.refresh(sync.folder)
+      radio.create_playlists_from_pirate_radio()
     end
   end)
 end
@@ -54,6 +59,7 @@ function sync:download_()
   for word in files:gmatch("%S+") do
     table.insert(file_list,word)
   end
+
   return file_list
 end
 

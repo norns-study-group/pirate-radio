@@ -35,3 +35,11 @@ weather = include "pirate-radio/lib/weather"
 
 -- syncing
 sync = include "pirate-radio/lib/sync"
+
+-- osc processing
+oscin=include "pirate-radio/lib/oscin"
+
+-- radio engine
+radio = include "pirate-radio/lib/radio"
+
+

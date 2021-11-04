@@ -32,13 +32,16 @@ function init()
   parameters.add_params()
   tuner.init()
   eq.init()
-  weather.init()
   sync.init()
+  oscin.init()
   --sync:download()
+  radio.init()
   redraw_timer_init()
+  debouncer_timer_init()
 
   init_midi_16n()
 
+  params:bang()
   initializing = false
 end
 
@@ -102,11 +105,31 @@ function redraw_timer_init()
     if menu_status==false and initializing==false and screen_dirty==true then
       pirate_radio_pages.update_pages()
       screen_dirty=false
-
     end
   end,SCREEN_FRAMERATE,-1)
   redrawtimer:start()
 end
+
+
+--------------------------
+-- debouncer 
+-- (and things that run async, like internet stuff,
+-- that may fail if there is no connection)
+--------------------------
+function debouncer_timer_init()
+  local counter=0
+  debouncetimer=metro.init(function()
+    counter = counter + 1
+    if counter>2 then
+      weather.init()
+      -- TODO: check what happens if this fails (i.e. no internet)
+      sync:download()
+      screen_dirty = true
+    end
+  end,1,-1)
+  debouncetimer:start()
+end
+
 
 function cleanup ()
   -- redrawtimer.free_all()
