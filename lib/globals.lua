@@ -48,12 +48,12 @@ SETTINGS_PATH = norns.state.data .. "pirate_radio_settings.txt"
 -------------------------------------------
 -- ui component global variables
 -------------------------------------------
-SELECTED_LEVEL_DEFAULT    = 10
-UNSELECTED_LEVEL_DEFAULT  = 3
-TUNER_MIN = 70
-TUNER_MAX = 150
-tuner_values = {80,90, 100,110, 120, 140}
-tuner_labels = {80,90, 100,110, 120, 140}
+SELECTED_LEVEL_DEFAULT    = 15
+UNSELECTED_LEVEL_DEFAULT  = 8
+TUNER_MIN = 88
+TUNER_MAX = 108
+tuner_values = {90,94,98,102,106}
+tuner_labels = {90,94,98,102,106}
 eq_labels = {-12,0,12}
 eq_values = {-12,0,12}
 
