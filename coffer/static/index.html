@@ -2,7 +2,7 @@
 
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>/uploads</title>
+    <title>🏴‍☠️</title>
     <style>
         body{max-width:650px;margin:40px auto;padding:0 10px;}
 
@@ -13,11 +13,17 @@
 </head>
 
 <body>
-    <form enctype="multipart/form-data" action="/upload-file" method="post">
-        <input type="file" name="files" multiple />
-        <input type="submit" value="upload" />
-    </form>
+    <pre>XX</pre>
     <div id="app">
+        <form enctype="multipart/form-data" action="/" method="post">
+            <input type="checkbox" id="useband" name="useband" v-model="checked" v-if="!dchecked">
+            <label for="useband" v-if="!dchecked">set band</label>&nbsp;
+            <input type="checkbox" id="dodelete" name="dodelete" v-model="dchecked" v-if="!checked">
+            <label for="dodelete"  v-if="!checked">delete</label>
+            <input type="number" v-if="checked" id="band" name="band" min=70 max=140 value="88.6" step="0.1" /><br>
+            <input type="file" name="files" multiple />
+            <input type="submit" value="upload" />
+        </form>
         <div v-for="upload in uploads" class="preview">
             <pre>{{upload}}</pre>
             <audio controls>
@@ -26,11 +32,13 @@
             </audio>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <script src="/static/vue.js"></script>
     <script>
     var app = new Vue({
         el: '#app',
         data: {
+            dchecked: false,
+            checked: false,
             uploads: []
         },
         created() {

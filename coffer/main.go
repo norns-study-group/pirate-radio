@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
@@ -22,6 +23,8 @@ import (
 const MaxBytesPerFile = 2000000000 // 2 GB
 const ContentDirectory = "uploads"
 
+var indexHTML []byte
+
 func main() {
 	port := 8730
 	os.MkdirAll(ContentDirectory, 0644)
@@ -29,12 +32,13 @@ func main() {
 	log.Infof("listening on :%d", port)
 	r := http.NewServeMux()
 	s := &http.Server{
-		Addr: fmt.Sprintf(":%d",port),
-		ReadTimeout: 0,
+		Addr:         fmt.Sprintf(":%d", port),
+		ReadTimeout:  0,
 		WriteTimeout: 0,
-		IdleTimeout: 0,
-		Handler:r,
+		IdleTimeout:  0,
+		Handler:      r,
 	}
+	r.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static"))))
 	r.HandleFunc("/", handler)
 	s.ListenAndServe()
 }
@@ -53,20 +57,47 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 	w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
 
-	if r.URL.Path == "/upload-file" {
-		return handleBrowserUpload(w, r)
-	} else if r.URL.Path == "/upload" {
+	if r.URL.Path == "/upload" {
 		return handleCurlUpload(w, r)
 	} else if r.URL.Path == "/uploads" {
 		// return a list of files
 		return handleListUploads(w, r)
 	} else if strings.HasSuffix(r.URL.Path, "ogg") {
 		return handleServeFile(w, r)
+	} else if r.URL.Path == "/uploader" {
+		return handleBrowserUpload(w, r)
+	} else if r.URL.Path == "/" {
+		if r.Method == "POST" {
+			return handleBrowserUpload(w, r)
+		} else {
+			return handleServeIndex(w, r, `instructions - 
+upload: click "Browse" and select one or more files. 
+(optional) check "use band" and enter the band. 
+click "upload" to upload those files to the server.
+
+delete: check "delete". 
+click "Browse" and select the original files you uploaded. 
+click "upload" and those files will be used to determine and 
+delete the server files.
+`)
+		}
+	} else if strings.HasPrefix(r.URL.Path, "/static/") {
+
 	} else {
-		b, _ := ioutil.ReadFile("static/index.html")
-		w.Write(b)
+		w.Write([]byte("ok"))
 	}
 
+	return
+}
+
+func handleServeIndex(w http.ResponseWriter, r *http.Request, data string) (err error) {
+	indexHTML, err = ioutil.ReadFile("static/index.html")
+	if err != nil {
+		return
+	}
+	log.Debugf("serving index with data: %s", data)
+	indexHTML = bytes.Replace(indexHTML, []byte("XX"), []byte(data), -1)
+	w.Write(indexHTML)
 	return
 }
 
@@ -88,7 +119,6 @@ func handleServeFile(w http.ResponseWriter, r *http.Request) (err error) {
 func handleCurlUpload(w http.ResponseWriter, r *http.Request) (err error) {
 	// Set upload limit
 	r.ParseMultipartForm(120 << 20) // 120 Mb
-
 	file, handler, err := r.FormFile("file")
 	if err != nil {
 		fmt.Fprintf(w, "%s\n", err.Error())
@@ -113,7 +143,7 @@ func handleCurlUpload(w http.ResponseWriter, r *http.Request) (err error) {
 		return
 	}
 
-	fname2, err := saveFile(tempfile.Name())
+	fname2, err := saveFile(tempfile.Name(), false, "90")
 	if err != nil {
 		fmt.Fprintf(w, "%s\n", err.Error())
 		return
@@ -125,6 +155,17 @@ func handleCurlUpload(w http.ResponseWriter, r *http.Request) (err error) {
 }
 
 func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) {
+	returnText := ""
+	defer func() {
+		if errBig == nil {
+			errBig = handleServeIndex(w, r, returnText)
+		} else {
+			errBig = handleServeIndex(w, r, errBig.Error())
+		}
+	}()
+	band := ""
+	useband := false
+	dodelete := false
 	// define some variables used throughout the function
 	// n: for keeping track of bytes read and written
 	// err: for storing errors that need checking
@@ -136,6 +177,7 @@ func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) 
 	var part *multipart.Part
 
 	if mr, err = r.MultipartReader(); err != nil {
+		errBig = err
 		return
 	}
 
@@ -155,19 +197,11 @@ func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) 
 
 		if part, err = mr.NextPart(); err != nil {
 			if err != io.EOF {
+				errBig = err
 				return
-			} else {
-				http.Redirect(w, r, "/", 301)
-				// log.Debugf("Hit last part of multipart upload")
-				// w.WriteHeader(200)
-				// fmt.Fprintf(w, "Upload completed")
 			}
 			return
 		}
-		// at this point the filename and the mimetype is known
-		log.Debugf("Uploaded filename: %s", part.FileName())
-		log.Debugf("Uploaded mimetype: %s", part.Header)
-
 		tempfile, err = os.Create(path.Join(os.TempDir(), "upload_"+part.FileName()))
 		if err != nil {
 			errBig = err
@@ -196,11 +230,51 @@ func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) 
 		log.Debugf("Uploaded filesize: %d bytes", filesize)
 		tempfile.Close()
 
-		fname2, err := saveFile(tempfile.Name())
+		if part.FormName() == "band" {
+			b, err := ioutil.ReadFile(tempfile.Name())
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			band = string(b)
+			continue
+		} else if part.FormName() == "dodelete" {
+			b, err := ioutil.ReadFile(tempfile.Name())
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			dodelete = string(b) == "on"
+			continue
+		} else if part.FormName() == "useband" {
+			b, err := ioutil.ReadFile(tempfile.Name())
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			useband = string(b) == "on"
+			continue
+		}
+
+		log.Debugf("%s: %s", useband, band)
+		log.Debugf("Uploaded filename: %s", part.FileName())
+		log.Debugf("Uploaded mimetype: %s", part.Header)
+
+		var fname2 string
+		doing := "uploaded"
+		if dodelete {
+			fname2, err = removeFile(tempfile.Name())
+			doing = "deleted"
+		} else {
+			removeFile(tempfile.Name()) // remove file if it exists
+			fname2, err = saveFile(tempfile.Name(), useband, band)
+		}
 		if err != nil {
+			returnText = returnText + fmt.Sprintf("error on '%s': %s\n", part.FileName(), err.Error())
 			log.Debugf("can't save: %s", tempfile.Name())
 		} else {
-			log.Debugf("saved %s", fname2)
+			returnText = returnText + fmt.Sprintf("%s '%s' as '%s'\n", doing, part.FileName(), fname2)
+			log.Debugf("%s %s", doing, fname2)
 		}
 	}
 	return
@@ -257,8 +331,28 @@ func Filemd5Sum(pathToFile string) (result string, err error) {
 	return
 }
 
-func saveFile(tempfname string) (fname2 string, err error) {
-	fname2, err = ToOgg(tempfname)
+func removeFile(tempfname string) (fname2 string, err error) {
+	hash, err := Filemd5Sum(tempfname)
+	if err != nil {
+		return
+	}
+	fileList, err := filepath.Glob("uploads/*.ogg")
+	for _, f := range fileList {
+		fname := filepath.Base(f)
+		if strings.HasPrefix(fname, hash) {
+			fname2 = fname
+			err = os.Remove(f)
+		}
+	}
+
+	if fname2 == "" {
+		err = fmt.Errorf("could not find file to delete with hash '%s'", hash)
+	}
+	return
+}
+
+func saveFile(tempfname string, useBand bool, band string) (fname2 string, err error) {
+	fname, err := ToOgg(tempfname)
 	if err != nil {
 		log.Debugf("error converting: %s", err.Error())
 		return
@@ -270,17 +364,30 @@ func saveFile(tempfname string) (fname2 string, err error) {
 		return
 	}
 
-	log.Debug(tempfname, fname2)
-
-	err = os.Rename(fname2, path.Join(ContentDirectory, hash+".ogg"))
-	fname2 = hash + ".ogg"
+	fname2 = hash + "-" + time.Now().Format("20060102")
+	if useBand {
+		fname2 = fname2 + "-" + band
+	}
+	fname2 += ".ogg"
+	err = os.Rename(fname, path.Join(ContentDirectory, fname2))
 	log.Debugf("saved %s", fname2)
 	return
 }
 
 func ToOgg(fname string) (fname2 string, err error) {
+	isMusic := false
+	for _, v := range []string{"wav", "ogg", "mp3", "m4a", "flac"} {
+		if strings.Contains(fname, v) {
+			isMusic = true
+		}
+	}
+	if !isMusic {
+		err = fmt.Errorf("%s is not music", fname)
+		return
+	}
+	// check if music
 	fname2 = strings.TrimSuffix(fname, filepath.Ext(fname)) + ".ogg"
-	_, err = exec.Command("ffmpeg","-y","-i",fname,"-ar","48000",fname2).CombinedOutput()
+	_, err = exec.Command("ffmpeg", "-y", "-i", fname, "-ar", "48000", fname2).CombinedOutput()
 	return
 }
 

@@ -1,18 +1,11 @@
 // first put PirateRadio.sc into your class directory (see here: https://doc.sccode.org/Guides/UsingExtensions.html)
 // then recompile with Ctl+Shift+L (windows)
-
-(
-// define radio with 2 playlist stations
-// and 1 looping station = 3 stations total
-p=PirateRadio.new(s,2,1,"/home/zns/Music/short");
-// the first stations are the looping stations
+p=PirateRadio.new(s,2);
 p.setBand(0,94.7,0.5);
-// set band and bandwidth of station 1
 p.setBand(1,98.6,0.5);
-// set band and bandwidth of station 1
-p.setBand(2,103.6,0.5);
-)
 
+p.addFile(0,"/home/zns/Documents/pirate-radio/lib/data/weather.flac");
+p.refreshStations
 
 p.setNextFile(0,"/home/zns/Documents/pirate-radio/lib/data/weather.flac");
 p.setDial(94.7); // station "0"

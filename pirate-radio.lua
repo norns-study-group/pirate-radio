@@ -29,16 +29,23 @@ function init()
 
   pages=UI.Pages.new(1,NUM_PAGES)
 
+  prereqs.install()
   tuner.init()
   eq.init()
-  weather.init()
   sync.init()
+  oscin.init()
   --sync:download()
+  radio.init()
   redraw_timer_init()
+  debouncer_timer_init()
 
   init_midi_16n()
+
   parameters.add_params()
   parameters.load_settings()
+
+  params:bang()
+
   initializing = false
 end
 
@@ -112,6 +119,23 @@ function redraw_timer_init()
   end,SCREEN_FRAMERATE,-1)
   redrawtimer:start()
 end
+
+
+--------------------------
+-- debouncer 
+-- (and things that run async, like internet stuff,
+-- that may fail if there is no connection)
+--------------------------
+function debouncer_timer_init()
+  debouncetimer=metro.init(function()
+    weather.init()
+    -- TODO: check what happens if this fails (i.e. no internet)
+    sync:download()
+    screen_dirty = true
+  end,1,-1)
+  debouncetimer:start()
+end
+
 
 function cleanup ()
   -- redrawtimer.free_all()
