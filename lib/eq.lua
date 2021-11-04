@@ -13,7 +13,7 @@ function eq.init()
   end
 
   eq:build_ui()  
-  eq.selected_band = nil
+  eq.selected_band = 1
 end
 
 function eq:build_ui()
@@ -27,9 +27,9 @@ function eq:build_ui()
     height=30,
     orientation='v',
     border=false,
-    selected=false,
-    tick_labels=eq_labels,
+    selected=true,
     tick_position = 'before',
+    tick_labels=eq_labels,
     tick_values=eq_values
   }
 
@@ -40,21 +40,21 @@ function eq:build_ui()
     height=30,
     orientation='v',
     border=false,
-    selected=false,
     tick_position = 'center',
+    selected=false,
     tick_values=eq_values
   }
 
   local eq_right_args = {
-    -- x=6,
+    x=6,
     y=eq_y+3,
     width=20,
     height=30,
     orientation='v',
     border=false,
     selected=false,
-    tick_labels=eq_labels,
     tick_position = 'after',
+    tick_labels=eq_labels,
     tick_values=eq_values
   }
 
@@ -83,9 +83,9 @@ function eq:build_ui()
 end
 
 function eq:set_band(value,band)
-  value = util.clamp(value,self.first_value,self.last_value)
   local p_min = self.bands.sliders[band].pointer_min
   local p_max = self.bands.sliders[band].pointer_max
+  value = util.clamp(value,self.first_value,self.last_value)
   value = util.linlin(self.first_value,self.last_value,p_min,p_max,value)
   self.bands.sliders[band]:set_pointer_loc(value,band)
 end
@@ -116,6 +116,7 @@ function eq:select_eq_band(delta)
   local new_band = self.selected_band and delta + self.selected_band or 1
   new_band = util.clamp(new_band,1,self.num_bands)
   self.bands:select(new_band)
+  print("new_band",new_band)
   self.selected_band = new_band
 end
 

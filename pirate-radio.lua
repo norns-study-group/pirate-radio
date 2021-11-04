@@ -21,7 +21,7 @@ include "lib/includes"
 -- init
 ------------------------------
 function init()
-  debug=true
+  debug=false
   -- set sensitivity of the encoders
   norns.enc.sens(1,6)
   norns.enc.sens(2,6)
@@ -30,7 +30,6 @@ function init()
   pages=UI.Pages.new(1,NUM_PAGES)
 
   prereqs.install()
-  parameters.add_params()
   tuner.init()
   eq.init()
   sync.init()
@@ -42,7 +41,11 @@ function init()
 
   init_midi_16n()
 
+  parameters.add_params()
+  parameters.load_settings()
+
   params:bang()
+
   initializing = false
 end
 
@@ -100,12 +103,18 @@ end
 --------------------------
 -- redraw
 --------------------------
+local menu_activated = false
 function redraw_timer_init()
   redrawtimer=metro.init(function()
     local menu_status=norns.menu.status()
     if menu_status==false and initializing==false and screen_dirty==true then
       pirate_radio_pages.update_pages()
       screen_dirty=false
+    elseif menu_status==false and initializing==false and menu_activated == true then
+      menu_activated = false
+      screen_dirty = true
+    elseif menu_status==true and menu_activated == false then
+      menu_activated = true
     end
   end,SCREEN_FRAMERATE,-1)
   redrawtimer:start()

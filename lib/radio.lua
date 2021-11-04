@@ -49,9 +49,9 @@ function radio.create_playlist_from_tapes()
 end
 
 function radio.set_dial(dial)
+    print("dial",dial)
     radio.dial=dial
-    -- TODO: this is not quite right....
-    tuner.dialer:set_pointer_loc(util.linlin(70,150,tuner.dialer.pointer_min,tuner.dialer.pointer_min+tuner.dialer.width,dial))
+    tuner:set_dial_loc(dial)
     engine.dial(dial)
 end
 
