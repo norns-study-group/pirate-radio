@@ -46,7 +46,7 @@ function parameters.tuner_func()
   -- print(specs.TUNER.minval,specs.TUNER.maxval,tuner.dialer.pointer_min,tuner.dialer.pointer_max, settings_value)
   tuner_val = util.linlin(specs.TUNER.minval,specs.TUNER.maxval,tuner.dialer.pointer_min,tuner.dialer.pointer_max, settings_value)
   -- print("tuner_val",tuner_val)
-  tuner.dialer:set_pointer_loc(tuner_val)
+  -- tuner.dialer:set_pointer_loc(tuner_val)
   parameters.save_settings({setting_name,settings_value})
 end
 
