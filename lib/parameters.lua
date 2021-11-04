@@ -44,9 +44,7 @@ end
 function parameters.tuner_func()
   local setting_name = "tuner"
   local settings_value = params:get("tuner")
-  if set_from_encoder ~= true then 
-    tuner:set_dial_loc(settings_value,true)
-  end
+  tuner:set_dial_loc(settings_value,true)
   parameters.save_settings({setting_name,settings_value})
 end
 

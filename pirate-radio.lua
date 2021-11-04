@@ -21,7 +21,7 @@ include "lib/includes"
 -- init
 ------------------------------
 function init()
-  debug=true
+  debug=false
   -- set sensitivity of the encoders
   norns.enc.sens(1,6)
   norns.enc.sens(2,6)

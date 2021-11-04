@@ -1,7 +1,6 @@
 -- encoders and keys
 
 local enc = function (n, delta)
-  set_from_encoder = true
   -- set variables needed by each page/example
   if n == 1 then
     -- scroll pages
@@ -24,7 +23,7 @@ local enc = function (n, delta)
     end
   elseif n == 3 then 
     if pages.index == 1 then
-      params:delta("dial",delta)
+      params:delta("tuner",delta)
     elseif pages.index == 2 then
       if alt_key_active == false then
         eq:set_selected_band_rel(delta)
@@ -40,7 +39,6 @@ local enc = function (n, delta)
     end
   end
   screen_dirty = true
-  set_from_encoder = false
 end
 
 local key = function (n,z)
