@@ -121,7 +121,8 @@ function debouncer_timer_init()
     counter = counter + 1
     if counter>2 then
       weather.init()
-      -- sync:download()
+      sync:download()
+      screen_dirty = true
     end
   end,1,-1)
   debouncetimer:start()
