@@ -113,7 +113,8 @@ end
 
 --------------------------
 -- debouncer 
--- (and things that run async, like internet stuff)
+-- (and things that run async, like internet stuff,
+-- that may fail if there is no connection)
 --------------------------
 function debouncer_timer_init()
   local counter=0
@@ -121,6 +122,7 @@ function debouncer_timer_init()
     counter = counter + 1
     if counter>2 then
       weather.init()
+      -- TODO: check what happens if this fails (i.e. no internet)
       sync:download()
       screen_dirty = true
     end
