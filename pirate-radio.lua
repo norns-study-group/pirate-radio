@@ -29,7 +29,6 @@ function init()
 
   pages=UI.Pages.new(1,NUM_PAGES)
 
-  parameters.add_params()
   tuner.init()
   eq.init()
   weather.init()
@@ -38,7 +37,8 @@ function init()
   redraw_timer_init()
 
   init_midi_16n()
-
+  parameters.add_params()
+  parameters.load_settings()
   initializing = false
 end
 

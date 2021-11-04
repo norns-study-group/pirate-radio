@@ -44,11 +44,14 @@ initializing = true
 screen_dirty = true
 alt_key_active = false
 
+SETTINGS_PATH = norns.state.data .. "pirate_radio_settings.txt"
 -------------------------------------------
 -- ui component global variables
 -------------------------------------------
 SELECTED_LEVEL_DEFAULT    = 10
 UNSELECTED_LEVEL_DEFAULT  = 3
+TUNER_MIN = 70
+TUNER_MAX = 150
 tuner_values = {80,90, 100,110, 120, 140}
 tuner_labels = {80,90, 100,110, 120, 140}
 eq_labels = {-12,0,12}

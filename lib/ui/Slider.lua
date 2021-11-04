@@ -54,6 +54,7 @@ function Slider:new(args)
     if self.pointer_loc_callback~=nil then
       self.pointer_loc_callback(loc)
     end
+    clock.run(fn.set_screen_dirty)
   end
 
   function slider:get_selected()

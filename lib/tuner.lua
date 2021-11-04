@@ -30,11 +30,16 @@ function tuner.build_ui()
   }
   tuner.dialer = Slider:new(dial_slider_args)
   tuner.dialer.pointer_loc_callback=function(loc)
-    loc=util.linlin(dial_slider_args.x,dial_slider_args.x+dial_slider_args.width,70,150,loc)
+    loc=util.linlin(dial_slider_args.x,dial_slider_args.x+dial_slider_args.width,TUNER_MIN,TUNER_MAX,loc)
     print("tuner: setting dial to "..loc)
+    tuner:set_dial_brightness()
     engine.dial(loc)
   end
   table.insert(tuner.components,tuner.dialer)
+end
+
+function tuner:set_dial_brightness()
+  print("tuner_brightness")
 end
 
 
