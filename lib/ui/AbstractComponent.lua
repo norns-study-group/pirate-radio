@@ -21,6 +21,14 @@ function AbstractComponent:new(args)
     self.selected = sel
   end
 
+  function ac:get_selected_level()
+    return self.selected_level
+  end
+
+  function ac:set_selected_level(sel_level)
+    self.selected_level = sel_level
+  end
+
   function ac:get_x()
     return self.x
   end
