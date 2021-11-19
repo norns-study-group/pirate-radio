@@ -9,6 +9,10 @@ local oscin={}
 
 oscin.strength=0
 
+function oscin.get_signal_strength()
+  return oscin.strength
+end
+
 function oscin.init()
   osc.event=function(path,args,from)
     if path=="strength" then
