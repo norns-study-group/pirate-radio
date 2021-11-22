@@ -155,7 +155,6 @@ PirateRadio {
 				    	"station",i,
 				    	"file",streamPlayers[i].getCurrentFileName,
 				    	"pos",streamPlayers[i].getCurrentFilePos,
-				    	"playlist",streamPlayers[i].getPlaylistPosition,
 				    );
 				});
 			}
@@ -186,12 +185,6 @@ PirateRadio {
 		streamPlayers[i].setBand(band,bandwidth);
 	}
 
-	// setNextFile queues up a particular file for a station
-	setNextFile {
-		arg i,fname;
-		streamPlayers[i].setNextFile(fname);
-	}
-
 	addFile {
 		arg i,fname;
 		streamPlayers[i].addFile(fname);
@@ -199,7 +192,7 @@ PirateRadio {
 
 	syncStation {
 		arg i, playlistPosition, currentFileName, currentTime;
-		streamPlayers[i].fileIndexCurrent=playlistPosition;
+		streamPlayers[i].setPlaylistPosition(playlistPosition);
 		streamPlayers[i].stopCurrent();
 		streamPlayers[i].playFile(currentFileName,currentTime);
 	}
@@ -374,16 +367,19 @@ PradStreamPlayer {
 		("channels: "++l2).postln;
 
 		// get sound channels
-		p = Pipe.new("ffprobe -i '"++fname.asAbsolutePath++"' -show_format -v quiet | sed -n 's/sample_rate=//p'", "r"); 
+		p = Pipe.new("ffprobe -i '"++fname.asAbsolutePath++"' -show_streams -v quiet | sed -n 's/sample_rate=//p'", "r"); 
 		l3 = p.getLine;                    // get the first line
 		p.close;                    // close the pipe to avoid that nasty buildup
-		("channels: "++l2).postln;
+		("sample rate: "++l3).postln;
 
 		// for whatever reason, if file is corrupted then skip it
 		if (l.isNil||l2.isNil,{},{
 			numChannels=l2.asInteger;
 			numFrames=l3.asFloat;
-			durationSeconds=l.asFloat-(startSeconds*numFrames);
+			durationSeconds=l.asFloat;
+			if (startSeconds<durationSeconds,{
+				durationSeconds=durationSeconds-startSeconds;
+			});
 			// if the file length is less than crossfade, reconfigure xfade
 			xfade=crossfade;
 			if (xfade>(durationSeconds/3),{
@@ -470,6 +466,11 @@ PradStreamPlayer {
 
 	getPlaylistPosition {
 		fileIndexCurrent
+	}
+
+	setPlaylistPosition {
+		arg i;
+		fileIndexCurrent=i;
 	}
 
 	setBand {
