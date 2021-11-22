@@ -266,6 +266,8 @@ PradStreamPlayer {
 	var <filePaths;
 	var <fileIndexCurrent;
 	var <fileSpecial;
+	var <fileCurrentPos;
+	var <fileScheduler;
 
 	*new {
 		arg idArg, serverArg, outBusArg, outStrengthBusArg, inDialBusArg;
@@ -284,6 +286,8 @@ PradStreamPlayer {
 		swap = 0;
 		crossfade=1;
 		fileIndexCurrent=(-1);
+		fileCurrentPos=0;
+		fileScheduler=0;
 		synths=Array.newClear(2);
 		bufs=Array.newClear(2);
 		mp3s=Array.newClear(2);
@@ -323,10 +327,11 @@ PradStreamPlayer {
 	}
 
 	playFile {
-		arg fname;
-		var p,l,l2;
-		var durationSeconds=1,numChannels=2;
+		arg fname, startSeconds=0;
+		var p,l,l2,l3;
+		var durationSeconds=1,numChannels=2,numFrames=1.0;
 		var xfade=0;
+		var currentFileScheduler=0;
 
 		// swap synths/buffers
 		swap=1-swap;
@@ -346,10 +351,17 @@ PradStreamPlayer {
 		p.close;                    // close the pipe to avoid that nasty buildup
 		("channels: "++l2).postln;
 
+		// get sound channels
+		p = Pipe.new("ffprobe -i '"++fname.asAbsolutePath++"' -show_format -v quiet | sed -n 's/sample_rate=//p'", "r"); 
+		l3 = p.getLine;                    // get the first line
+		p.close;                    // close the pipe to avoid that nasty buildup
+		("channels: "++l2).postln;
+
 		// for whatever reason, if file is corrupted then skip it
 		if (l.isNil||l2.isNil,{},{
 			numChannels=l2.asInteger;
-			durationSeconds=l.asFloat;
+			numFrames=l3.asFloat;
+			durationSeconds=l.asFloat-(startSeconds*numFrames);
 			// if the file length is less than crossfade, reconfigure xfade
 			xfade=crossfade;
 			if (xfade>(durationSeconds/3),{
@@ -365,9 +377,9 @@ PradStreamPlayer {
 					mp3s[swap].finish;
 				});
 				mp3s[swap]=MP3(fname.absolutePath,\readfile,\ogg);
-				bufs[swap]=Buffer.cueSoundFile(server,mp3s[swap].fifo,numChannels:numChannels);
+				bufs[swap]=Buffer.cueSoundFile(server,mp3s[swap].fifo,startFrame:startSeconds*numFrames, numChannels:numChannels);
 			},{
-				bufs[swap]=Buffer.cueSoundFile(server,fname.absolutePath,numChannels:numChannels);
+				bufs[swap]=Buffer.cueSoundFile(server,fname.absolutePath,startFrame:startSeconds*numFrames, numChannels:numChannels);
 			});
 
 			// replace our current synth with the new one (preserves order)
@@ -415,12 +427,25 @@ PradStreamPlayer {
 				\out,outBus.index,\bufnum,bufs[swap]],addAction:\addReplace);
 		});
 		// start a clock to queue the next file (before current is done)
+		fileCurrentPos=Main.elapsedTime;
+		fileScheduler=fileScheduler+1;
+		currentFileScheduler=fileScheduler;
 		SystemClock.sched(durationSeconds-xfade, {
-			this.playNextFile;
+			if (currentFileScheduler==fileScheduler,{
+				this.playNextFile;
+			});
 			nil
 		});
 	}
 
+	reportState {
+		// send out current file name
+		// fnames[swap]
+		// and its current position
+		// Main.elapsedTime - fileCurrentPos;
+		// and its current playlist?
+		// filePaths
+	}
 
 	setBand {
 		arg ba,bw;
