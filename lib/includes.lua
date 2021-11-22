@@ -39,9 +39,19 @@ sync = include "pirate-radio/lib/sync"
 -- osc processing
 oscin=include "pirate-radio/lib/oscin"
 
+-- synchronization
+dust2dust_= include "pirate-radio/lib/dust2dust"
+
 -- radio engine
 radio = include "pirate-radio/lib/radio"
 
 -- pre-req installation
 prereqs = include "pirate-radio/lib/prereqs"
 
+-- for json
+
+-- load json library
+if not string.find(package.cpath,"/home/we/dust/code/pirate-radio/lib/") then
+  package.cpath=package.cpath..";/home/we/dust/code/pirate-radio/lib/?.so"
+end
+json=require("cjson")

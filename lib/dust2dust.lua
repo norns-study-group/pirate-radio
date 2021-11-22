@@ -1,11 +1,5 @@
 local Dust2Dust={}
 
--- load json library
-if not string.find(package.cpath,"/home/we/dust/code/dust2dust/lib/") then
-  package.cpath=package.cpath..";/home/we/dust/code/dust2dust/lib/?.so"
-end
-local json=require("cjson")
-
 -- string.random return random strings https://gist.github.com/haggen/2fd643ea9a261fea2094
 local charset={}
 -- qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890
@@ -46,8 +40,8 @@ function Dust2Dust:new(o)
 end
 
 function Dust2Dust:receive(fn)
-  -- if needed, you can preserve the old osc.event
-  --local old_osc_in=osc.event
+  -- preserve the old osc.event
+  local old_osc_in=osc.event
   osc.event=function(path,args,from)
     if old_osc_in~=nil then
       old_osc_in(path,args,from)

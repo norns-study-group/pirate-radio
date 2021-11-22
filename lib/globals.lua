@@ -32,6 +32,32 @@ function fn.set_screen_dirty()
     clock.sleep(0.1)
     screen_dirty = true
 end
+
+function fn.load_json(fname)
+  if not util.file_exists(filename) then
+    do return end
+  end
+  local f = assert(io.open(fname,"rb"))
+  local content = f:read("*all")
+  f:close()
+  if content==nil then 
+    do return end 
+  end
+  return json.decode(content)
+end
+
+function fn.index_of(arr,num)
+  for i,v in ipairs(arr) do 
+    if num==v then 
+      do return i end 
+    end
+  end
+end
+
+function fn.path_split(filename)
+  local pathname,fname,ext=string.match(filename,"(.-)([^\\/]-%.?([^%.\\/]*))$")
+  return pathname,fname,ext
+end
 -------------------------------------------
 -- global variables
 -------------------------------------------

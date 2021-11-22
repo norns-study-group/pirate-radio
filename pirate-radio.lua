@@ -32,8 +32,11 @@ function init()
   prereqs.install()
   tuner.init()
   eq.init()
-  sync.init()
   oscin.init()
+  -- dust2dust needs to be defined after oscin
+  dust2dust=dust2dust_:new({room="pirateradio"})
+  sync.init()
+
   --sync:download()
   radio.init()
   redraw_timer_init()
