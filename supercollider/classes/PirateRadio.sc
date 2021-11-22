@@ -153,8 +153,8 @@ PirateRadio {
 				(0..numStreams-1).do({arg i;
 				    NetAddr("127.0.0.1", 10111).sendMsg("info",
 				    	"station",i,
-				    	"file",streamPlayers[i].getCurrentFileName,
-				    	"pos",streamPlayers[i].getCurrentFilePos,
+				    	"file",streamPlayers[i].fnames[streamPlayers[i].swap],
+				    	"pos",Main.elapsedTime - streamPlayers[i].fileCurrentPos,
 				    );
 				});
 			}
@@ -454,18 +454,6 @@ PradStreamPlayer {
 			});
 			nil
 		});
-	}
-
-	getCurrentFileName {
-		fnames[swap]
-	}
-
-	getCurrentFilePos {
-		Main.elapsedTime - fileCurrentPos;
-	}
-
-	getPlaylistPosition {
-		fileIndexCurrent
 	}
 
 	setPlaylistPosition {
