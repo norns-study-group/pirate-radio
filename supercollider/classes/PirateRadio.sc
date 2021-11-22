@@ -145,6 +145,21 @@ PirateRadio {
 			snd = Limiter.ar(snd, threshold, lookahead).clip(-1, 1);
 			Out.ar(0, snd);
 		}.play(target:server, args:[\in, outputBus.index], addAction:\addToTail);
+
+		// send periodic information to norns
+		Routine{
+			inf.do{
+				5.sleep;
+				(0..numStreams-1).do({arg i;
+				    NetAddr("127.0.0.1", 10111).sendMsg("info",
+				    	"station",i,
+				    	"file",streamPlayers[i].getCurrentFileName,
+				    	"pos",streamPlayers[i].getCurrentFilePos,
+				    	"playlist",streamPlayers[i].getPlaylistPosition,
+				    );
+				});
+			}
+		}.play;
 	}
 
 	// set file location
@@ -180,6 +195,13 @@ PirateRadio {
 	addFile {
 		arg i,fname;
 		streamPlayers[i].addFile(fname);
+	}
+
+	syncStation {
+		arg i, playlistPosition, currentFileName, currentTime;
+		streamPlayers[i].fileIndexCurrent=playlistPosition;
+		streamPlayers[i].stopCurrent();
+		streamPlayers[i].playFile(currentFileName,currentTime);
 	}
 
 	clearFiles {
@@ -438,13 +460,16 @@ PradStreamPlayer {
 		});
 	}
 
-	reportState {
-		// send out current file name
-		// fnames[swap]
-		// and its current position
-		// Main.elapsedTime - fileCurrentPos;
-		// and its current playlist?
-		// filePaths
+	getCurrentFileName {
+		fnames[swap]
+	}
+
+	getCurrentFilePos {
+		Main.elapsedTime - fileCurrentPos;
+	}
+
+	getPlaylistPosition {
+		fileIndexCurrent
 	}
 
 	setBand {
@@ -467,14 +492,10 @@ PradStreamPlayer {
 		filePaths=List();
 	}
 
-	// setNextFile will override the playlist and queue up specified file next
-	setNextFile {
-		arg fname;
-		fileSpecial=fname;
-	}
-
 	stopCurrent {
 		synths[swap].set(\toggle,0);
+		// this ensures its clock won't fire
+		fileScheduler=fileScheduler+1;
 	}
 
 	////////////////
