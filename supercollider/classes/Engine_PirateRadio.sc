@@ -69,6 +69,15 @@ Engine_PirateRadio : CroneEngine {
 				radio.getEngineState();
 			});
 		});
+		
+		// i, playlistPosition, currentFilename, currentTime
+		this.addCommand(\syncStation, "", {
+			arg msg;
+			if (radio.notNil,{
+				radio.syncStation(msg[1],msg[2],msg[3],msg[4]);
+			});
+		});
+
 
 
 

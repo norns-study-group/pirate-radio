@@ -185,6 +185,8 @@ PirateRadio {
 			msg.add(streamPlayers[i].fnames[streamPlayers[i].swap]);
 			msg.add("pos");		
 			msg.add(Main.elapsedTime - streamPlayers[i].fileCurrentPos);
+			msg.add("playlist");
+			msg.add(streamPlayers[i].fileIndexCurrent);
 		});
 		NetAddr("127.0.0.1", 10111).sendMsg(*msg);
 	}
