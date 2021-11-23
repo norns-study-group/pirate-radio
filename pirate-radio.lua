@@ -129,9 +129,14 @@ end
 -- that may fail if there is no connection)
 --------------------------
 function debouncer_timer_init()
+  local inited=false
   debouncetimer=metro.init(function()
-    weather.init()
-    sync:download()
+    if not inited then
+      inited=true
+      weather.init()
+      sync:download()
+      dust2dust:send({message="need-sync"})
+    end
     screen_dirty = true
   end,1,-1)
   debouncetimer:start()

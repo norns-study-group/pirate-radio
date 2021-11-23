@@ -21,8 +21,11 @@ function radio.init()
 	    do return end 
         end
         if data.message=="give-sync" and radio.synced~=true then 
-            radio.synced=radio.create_playlists_from_sync(data)
+	    print("radio.init: give-sync")
+	    print(json.encode(data))
+            --radio.synced=radio.create_playlists_from_sync(data)
         elseif data.message=="need-sync" and radio.pirate_radio_enabled then 
+	    print("radio.init: need-sync")
             -- send out this stations syncing
             oscin.get_engine_state(function(engine_state)
                 local send_data={}
@@ -126,7 +129,6 @@ function radio.create_playlists_from_pirate_radio()
         local metadata=fn.audio_metadata(fname)
         if metadata==nil then goto continue end 
         local station_index=radio.index_of_station(metadata.metaband)
-	print(fname,"station_index",metadata.metaband,station_index)
         if station_index==nil then goto continue end
         radio.add_file_to_station(station_index,fname)
         ::continue::
