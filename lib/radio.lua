@@ -17,9 +17,12 @@ function radio.init()
 
     -- startup dust2dust
     dust2dust:receive(function(data)
+	if data==nil then 
+	    do return end 
+        end
         if data.message=="give-sync" and radio.synced~=true then 
             radio.synced=radio.create_playlists_from_sync(data)
-        elseif data.message="need-sync" and radio.pirate_radio_enabled then 
+        elseif data.message=="need-sync" and radio.pirate_radio_enabled then 
             -- send out this stations syncing
             oscin.get_engine_state(function(engine_state)
                 local send_data={}
@@ -94,7 +97,7 @@ function radio.create_playlists_from_sync(data)
     end
     -- TODO: check engine state
     for i,v in ipairs(data.playlists) do
-        if util.file_exists(v.fname) do
+        if util.file_exists(v.fname) then
             radio.add_file_to_station(v.station,v.fname)
         end
     end
