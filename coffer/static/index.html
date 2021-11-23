@@ -3,33 +3,69 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>🏴‍☠️</title>
+    <link rel="stylesheet" href="/static/normalize.css">
+    <link rel="stylesheet" href="/static/skeleton.css">
     <style>
-        body{max-width:650px;margin:40px auto;padding:0 10px;}
+        body{
+            max-width:750px;margin:20px auto;padding:0 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.3em;
+        }
 
-.preview {
-    margin-top: 2em;
-}
+    .preview {
+        margin-top: 2em;
+    }
 </style>
 </head>
 
 <body>
-    <pre>XX</pre>
-    <div id="app">
-        <form enctype="multipart/form-data" action="/" method="post">
-            <input type="checkbox" id="useband" name="useband" v-model="checked" v-if="!dchecked">
-            <label for="useband" v-if="!dchecked">set band</label>&nbsp;
-            <input type="checkbox" id="dodelete" name="dodelete" v-model="dchecked" v-if="!checked">
-            <label for="dodelete"  v-if="!checked">delete</label>
-            <input type="number" v-if="checked" id="band" name="band" min=70 max=140 value="88.6" step="0.1" /><br>
-            <input type="file" name="files" multiple />
-            <input type="submit" value="upload" />
-        </form>
-        <div v-for="upload in uploads" class="preview">
-            <pre>{{upload}}</pre>
-            <audio controls>
-                <source v-bind:src="upload" type="audio/ogg">
-                Your browser does not support the audio tag.
-            </audio>
+    <div class="container">
+        <div id="app">
+            <p>
+                <div v-for="line in message.split(/\r?\n/)" class="row">
+                    {{line}}
+                </div>
+            </p>
+            <h5>contribute</h5>
+            <form enctype="multipart/form-data" action="/" method="post">
+                <div class="row">
+                    <div class="twelve columns">
+                        <label for="band">select station <a href="https://github.com/norns-study-group/pirate-radio/" target="_blank">or make your own</a></label>
+                        <select class="u-full-width" id="band" name="band">
+                            <option v-for="band in radioFrequencies" :value="band.band">{{band.name}}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="six columns">
+                        <label for="metaartist">artist</label>
+                        <input class="u-full-width" type="text" placeholder="(optional)" name="metaartist" id="metaartist">
+                    </div>
+                    <div class="six columns">
+                        <label for="metaotherinfo">other info</label>
+                        <input class="u-full-width" type="text" placeholder="(optional)" name="metaotherinfo" id="metaotherinfo">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="three columns">
+                        <label for="dodelete">delete</label>
+                        <input type="checkbox" id="dodelete" name="dodelete">
+                    </div>
+                    <div class="nine columns">
+                        <label for="files">choose file(s)</label>
+                        <input type="file" name="files" multiple>
+                    </div>
+                </div>
+                <input class="button" class="u-full-width" type="submit" value="upload">
+            </form>
+            <h5>uploads</h5>
+            <div v-for="upload in uploads" class="preview">
+                <pre>{{upload}}</pre>
+                <audio controls>
+                    <source v-bind:src="upload" type="audio/ogg">
+                    Your browser does not support the audio tag.
+                </audio>
+            </div>
         </div>
     </div>
     <script src="/static/vue.js"></script>
@@ -37,8 +73,14 @@
     var app = new Vue({
         el: '#app',
         data: {
+            message: `XX`,
             dchecked: false,
             checked: false,
+            radioFrequencies: [
+                { band: 0, name: "(optional)" },
+                { band: 94.7, name: "knrk (94.7)" },
+                { band: 102.2, name: "kink (102.2)" },
+            ],
             uploads: []
         },
         created() {
