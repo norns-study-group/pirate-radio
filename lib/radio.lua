@@ -23,12 +23,12 @@ function radio.init()
         if data.message=="give-sync" and radio.synced~=true then 
 	    print("radio.init: give-sync")
 	    print(json.encode(data))
-            --radio.synced=radio.create_playlists_from_sync(data)
+            radio.synced=radio.create_playlists_from_sync(data)
         elseif data.message=="need-sync" and radio.pirate_radio_enabled then 
 	    print("radio.init: need-sync")
             -- send out this stations syncing
             oscin.get_engine_state(function(engine_state)
-                local send_data={}
+                local send_data={message="give-sync"}
                 send_data.playlists=radio.playlists
                 send_data.engine_state=engine_state
                 dust2dust:send(send_data)
@@ -100,8 +100,6 @@ function radio.create_playlists_from_sync(data)
     if #data.playlists<2 then 
         do return end 
     end
-    -- TODO: check engine state
-  sync:download()
     for i,v in ipairs(data.playlists) do
         if util.file_exists(v.fname) then
             radio.add_file_to_station(v.station,v.fname)
