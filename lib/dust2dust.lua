@@ -64,17 +64,17 @@ function Dust2Dust:start()
   local pid=os.capture("pidof dust2dust")
   print("pidof "..pid)
   if pid=="" then
-    if not util.file_exists("/home/we/dust/code/dust2dust/dust2dust") then
+    if not util.file_exists("/home/we/dust/code/pirate-radio/dust2dust") then
       -- download it
-      local cmd="wget https://github.com/schollz/dust2dust/releases/download/releases/dust2dust -O /home/we/dust/code/dust2dust/dust2dust"
+      local cmd="wget https://github.com/schollz/dust2dust/releases/download/releases/dust2dust -O /home/we/dust/code/pirate-radio/dust2dust"
       print(cmd)
       os.execute(cmd)
     end
     print("running dust2dust")
-    local cmd="chmod +x /home/we/dust/code/dust2dust/dust2dust"
+    local cmd="chmod +x /home/we/dust/code/pirate-radio/dust2dust"
     print(cmd)
     os.execute(cmd)
-    cmd="/home/we/dust/code/dust2dust/dust2dust --addr https://dust2dust.norns.online --name "..self.name.." --room "..self.room.." --osc-send localhost:10111 --osc-recv localhost:"..self.port.."&"
+    cmd="/home/we/dust/code/pirate-radio/dust2dust --addr https://dust2dust.norns.online --name "..self.name.." --room "..self.room.." --osc-send localhost:10111 --osc-recv localhost:"..self.port.."&"
     print(cmd)
     os.execute(cmd)
   end
