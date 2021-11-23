@@ -91,7 +91,7 @@ function fn.audio_metadata(fname)
           else
               v=string.sub(kv,equalsloc+1)
           end
-          metadata[k]=v
+          metadata[string.lower(k)]=v
       end
   end
   return metadata
