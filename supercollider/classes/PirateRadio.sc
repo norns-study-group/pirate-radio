@@ -173,9 +173,10 @@ PirateRadio {
 		});
 	}
 
-	asyncGetInfo {
+	getEngineState {
 		var nStreams=streamPlayers.size;
 		var msg=List.new();
+		msg.add("enginestate")
 		(0..nStreams-1).do({arg i;
 			("station"++i).postln;
 			msg.add("station");

@@ -63,6 +63,15 @@ Engine_PirateRadio : CroneEngine {
 			});
 		});
 
+		this.addCommand(\getEngineState, "", {
+			arg msg;
+			if (radio.notNil,{
+				radio.getEngineState();
+			});
+		});
+
+
+
 		//... other commands...
 
 		///.. polls?
