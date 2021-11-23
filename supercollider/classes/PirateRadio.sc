@@ -173,6 +173,28 @@ PirateRadio {
 		});
 	}
 
+	asyncGetInfo {
+		var nStreams=streamPlayers.size;
+		var msg=List.new();
+		(0..nStreams-1).do({arg i;
+			("station"++i).postln;
+			msg.add("station");
+			msg.add(i);
+			msg.add("file");
+			msg.add(streamPlayers[i].fnames[streamPlayers[i].swap]);
+			msg.add("pos");		
+			msg.add(Main.elapsedTime - streamPlayers[i].fileCurrentPos);
+		    // NetAddr("127.0.0.1", 10111).sendMsg("info",
+		    // 	"station",i,
+		    // 	"file",streamPlayers[i].fnames[streamPlayers[i].swap],
+		    // 	"pos",Main.elapsedTime - streamPlayers[i].fileCurrentPos,
+		    // );
+		});
+		// TODO: this should work???
+		NetAddr("127.0.0.1", 10111).sendMsg(*msg);
+	}
+
+
 	// set the dial position
 	setDial {
 		arg value;
