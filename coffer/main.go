@@ -221,7 +221,7 @@ func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) 
 		tempfile.Close()
 
 		log.Debug("form: ", part.FormName())
-		if part.FormName() == "band" ||
+		if part.FormName() == "metaband" ||
 			part.FormName() == "metaartist" ||
 			part.FormName() == "metaotherinfo" {
 			bs, err := getFileContents(tempfile.Name())
@@ -377,6 +377,17 @@ func ToOgg(fname string, metadata map[string]string) (fname2 string, err error) 
 	if !isMusic {
 		err = fmt.Errorf("%s is not music", fname)
 		return
+	}
+
+	// try to determine tempo
+	out, err := exec.Command("aubio", "tempo", fname).CombinedOutput()
+	if err != nil {
+		log.Error("could not compute tempo")
+		log.Debugf("out: %s", out)
+	}
+	foo := strings.Fields(string(out))
+	if len(foo) > 0 {
+		metadata["metabpm"] = foo[0]
 	}
 
 	fname2 = strings.TrimSuffix(fname, filepath.Ext(fname)) + ".ogg"
