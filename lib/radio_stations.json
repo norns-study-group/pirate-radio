@@ -3,11 +3,18 @@
     "band": 90.3,
     "name": "weather",
     "description": "24/7 weather",
+    "allow_uploads": false,
     "image": "/location/to/image"
 },
 {
     "band": 94.7,
     "name": "knrk",
-    "description": "..",
+    "description": "anything goes",
+    "image": "/location/to/image"
+},
+{
+    "band": 101.9,
+    "name": "kink",
+    "description": "potted plant",
     "image": "/location/to/image"
 }]

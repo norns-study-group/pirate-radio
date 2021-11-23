@@ -30,9 +30,9 @@
             <form enctype="multipart/form-data" action="/" method="post">
                 <div class="row">
                     <div class="twelve columns">
-                        <label for="metaband">select station <a href="https://github.com/norns-study-group/pirate-radio/" target="_blank">or make your own</a></label>
+                        <label for="metaband">select station <a href="https://github.com/norns-study-group/pirate-radio/edit/main/lib/radio_stations.json" target="_blank">or make your own</a></label>
                         <select class="u-full-width" id="metaband" name="metaband">
-                            <option v-for="band in radioFrequencies" :value="band.band">{{band.name}}</option>
+                            <option v-for="station in radio_stations" :value="station.band" v-if="station.allow_uploads!=false">{{station.name}} - "{{station.description}}" ({{station.band}})</option>
                         </select>
                     </div>
                 </div>
@@ -76,17 +76,16 @@
             message: `XX`,
             dchecked: false,
             checked: false,
-            radioFrequencies: [
-                { band: 0, name: "(optional)" },
-                { band: 94.7, name: "knrk (94.7)" },
-                { band: 102.2, name: "kink (102.2)" },
-            ],
+            radio_stations: [],
             uploads: []
         },
         created() {
             fetch("/uploads")
                 .then(response => response.json())
                 .then(data => (this.uploads = data.uploads));
+            fetch("/radio_stations.json")
+                .then(response => response.json())
+                .then(data => (this.radio_stations = data));
         }
     })
     </script>

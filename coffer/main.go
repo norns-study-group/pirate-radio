@@ -73,7 +73,14 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 			return handleServeIndex(w, r, ``)
 		}
 	} else if strings.HasPrefix(r.URL.Path, "/static/") {
-
+	} else if strings.HasPrefix(r.URL.Path, "/radio_stations.json") {
+		var b []byte
+		b, err = ioutil.ReadFile("../lib/radio_stations.json")
+		if err != nil {
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(b)
 	} else {
 		w.Write([]byte("ok"))
 	}
