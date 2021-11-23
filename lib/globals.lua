@@ -58,6 +58,45 @@ function fn.path_split(filename)
   local pathname,fname,ext=string.match(filename,"(.-)([^\\/]-%.?([^%.\\/]*))$")
   return pathname,fname,ext
 end
+
+function fn.audio_metadata(fname)
+  -- meta data is of the form
+  -- TAG:encoder=Lavc58.54.100 libvorbis
+  -- TAG:metaband='0'
+  -- TAG:metaartist=''
+  -- TAG:metaotherinfo=''
+  -- TAG:metafile='DNITA_vocal_phrase_all_the_time_dry_80_Ab_bpm80.wav'
+  -- TAG:metabpm='112.96'
+
+  local metadata={}
+  local tempfile="/tmp/tmp"..math.random()
+  local output=util.os_capture("ffprobe -i "..fname.." -show_streams -v quiet > "..tempfile)
+  local lines = {}
+  for line in io.lines(tempfile) do 
+      lines[#lines + 1] = line
+  end
+  util.os_capture("rm "..tempfile)
+  for i,line in ipairs(lines) do 
+      local prefix="TAG:"
+      if line:find(prefix,1,#prefix) then 
+          local kv=string.sub(line,#prefix+1)
+          local equalsloc=string.find(kv,"=")
+          k=string.sub(kv,1,equalsloc-1)
+          local v=""
+          local quoteloc=string.find(string.sub(kv,equalsloc),"'")
+          if quoteloc~=nil then 
+              v=string.sub(kv,equalsloc+2)
+              quoteloc=string.find(v,"'")
+              v=string.sub(v,1,quoteloc-1)
+          else
+              v=string.sub(kv,equalsloc+1)
+          end
+          metadata[k]=v
+      end
+  end
+  return metadata
+end
+
 -------------------------------------------
 -- global variables
 -------------------------------------------
