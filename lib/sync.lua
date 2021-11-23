@@ -18,7 +18,8 @@ function sync:download(force)
     local files=sync:download_()
     print("sync: have "..#files.." files downloaded")
     if #files>2 then 
-      print("sync: refreshing engine")
+      -- send message to sync with other norns
+      dust2dust:send({message="sync-radio"})
       radio.create_playlists_from_pirate_radio()
     end
   end)

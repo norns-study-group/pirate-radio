@@ -55,3 +55,6 @@ if not string.find(package.cpath,"/home/we/dust/code/pirate-radio/lib/") then
   package.cpath=package.cpath..";/home/we/dust/code/pirate-radio/lib/?.so"
 end
 json=require("cjson")
+
+-- load the radio station list
+radio_stations=fn.load_json(_path.code.."pirate-radio/lib/radio_stations.json")

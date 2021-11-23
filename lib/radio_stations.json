@@ -1,0 +1,13 @@
+[
+{
+    "band": 90.3,
+    "name": "weather",
+    "description": "24/7 weather",
+    "image": "/location/to/image"
+},
+{
+    "band": 94.7,
+    "name": "knrk",
+    "description": "..",
+    "image": "/location/to/image"
+}]
