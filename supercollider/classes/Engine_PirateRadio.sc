@@ -71,7 +71,7 @@ Engine_PirateRadio : CroneEngine {
 		});
 		
 		// i, playlistPosition, currentFilename, currentTime
-		this.addCommand(\syncStation, "", {
+		this.addCommand(\syncStation, "iisf", {
 			arg msg;
 			if (radio.notNil,{
 				radio.syncStation(msg[1],msg[2],msg[3],msg[4]);
