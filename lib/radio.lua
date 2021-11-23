@@ -20,6 +20,7 @@ function radio.init()
 	if data==nil then 
 	    do return end 
         end
+	print("received data from dust2dust: "..json.encode(data))
         if data.message=="give-sync" and radio.synced~=true then 
 	    print("radio.init: give-sync")
 	    print(json.encode(data))
