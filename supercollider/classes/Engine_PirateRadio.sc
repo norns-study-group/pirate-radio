@@ -74,7 +74,7 @@ Engine_PirateRadio : CroneEngine {
 		this.addCommand(\syncStation, "iisf", {
 			arg msg;
 			if (radio.notNil,{
-				radio.syncStation(msg[1],msg[2],msg[3],msg[4]);
+				radio.syncStation(msg[1],msg[2],msg[3].asSymbol,msg[4]);
 			});
 		});
 
