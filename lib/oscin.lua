@@ -19,12 +19,16 @@ end
 -- by utilizing polling and a callback
 -- use with engine.getEngineState
 function oscin.get_engine_state(fn)
+  engine.getEngineState()
   clock.run(function()
     while true do
       clock.sleep(0.25)
-      if oscin.have_info==true then 
-        osc.have_info=false
-        fn(oscin.info)
+      if oscin.have_info==true then
+        oscin.have_info=false
+	print(json.encode(oscin.info))
+        if fn~=nil then
+          fn(oscin.info)
+        end
         return
       end
     end
@@ -37,10 +41,26 @@ function oscin.init()
       oscin.strength=tonumber(args[1])
     end
     if path=="enginestate" then
-      -- TODO: wth happens here?
-      print(args)
+      oscin.info={}
+      local key=""
+      local state=nil
+      for i,v in ipairs(args) do
+        if i%2==1 then
+          key=v
+          if key=="station" then
+	    if state~=nil then 
+		    table.insert(oscin.info,state)
+	    end
+            state={}
+          end
+        else
+          state[key]=v
+        end
+      end
+      if state~=nil then 
+	      table.insert(oscin.info,state)
+      end
       oscin.have_info=true
-      oscin.info={some="data"}
     end
   end
 end

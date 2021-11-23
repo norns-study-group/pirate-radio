@@ -62,6 +62,7 @@ function radio.add_file_to_station(station,fname)
 end
 
 function radio.clear_stations()
+    print("radio.clear_stations")
     -- clear playlists
     for i=1,#radio_stations-1 do
         engine.clearFiles(i)
@@ -92,10 +93,12 @@ end
 function radio.create_playlists_from_sync(data)
     if data.playlists==nil then 
         do return end 
+    end
     if #data.playlists<2 then 
         do return end 
     end
     -- TODO: check engine state
+  sync:download()
     for i,v in ipairs(data.playlists) do
         if util.file_exists(v.fname) then
             radio.add_file_to_station(v.station,v.fname)
@@ -110,6 +113,7 @@ function radio.create_playlists_from_sync(data)
 end
 
 function radio.create_playlists_from_pirate_radio()
+    print("radio.create_playlists_from_pirate_radio")
     radio.clear_stations()
 
     -- add randomly
@@ -121,9 +125,10 @@ function radio.create_playlists_from_pirate_radio()
         local fname=_path.audio.."pirate-radio/"..f
         local metadata=fn.audio_metadata(fname)
         if metadata==nil then goto continue end 
-        local station_index=radio.index_of_station(metadata.band)
+        local station_index=radio.index_of_station(metadata.metaband)
+	print(fname,"station_index",metadata.metaband,station_index)
         if station_index==nil then goto continue end
-        radio.add_file_to_station(station_index-1,fname)
+        radio.add_file_to_station(station_index,fname)
         ::continue::
     end
 
@@ -138,7 +143,7 @@ function radio.index_of_station(band)
         do return end 
     end
     for i,station in ipairs(radio_stations) do
-        if station.band==band then 
+        if tonumber(station.band)==tonumber(band) then 
             return i
         end
     end

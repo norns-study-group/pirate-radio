@@ -126,7 +126,7 @@ MP3 {
 //			("MP3.start completed (PID"+(pid?"unknown")++")").postln;
 //			playing = true;
 //		});
-		cmd.postln;
+		//cmd.postln;
 
 		// this is a synchronous process
 		cmd.systemCmd;

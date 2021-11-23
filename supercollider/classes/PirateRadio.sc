@@ -174,10 +174,10 @@ PirateRadio {
 	}
 
 	getEngineState {
-		var nStreams=streamPlayers.size;
+		var nStreams=streamPlayers.size-1;
 		var msg=List.new();
 		msg.add("enginestate");
-		(0..nStreams-1).do({arg i;
+		(0..nStreams).do({arg i;
 			("station"++i).postln;
 			msg.add("station");
 			msg.add(i);
@@ -185,13 +185,7 @@ PirateRadio {
 			msg.add(streamPlayers[i].fnames[streamPlayers[i].swap]);
 			msg.add("pos");		
 			msg.add(Main.elapsedTime - streamPlayers[i].fileCurrentPos);
-		    // NetAddr("127.0.0.1", 10111).sendMsg("info",
-		    // 	"station",i,
-		    // 	"file",streamPlayers[i].fnames[streamPlayers[i].swap],
-		    // 	"pos",Main.elapsedTime - streamPlayers[i].fileCurrentPos,
-		    // );
 		});
-		// TODO: this should work???
 		NetAddr("127.0.0.1", 10111).sendMsg(*msg);
 	}
 
@@ -375,25 +369,23 @@ PradStreamPlayer {
 		swap=1-swap;
 		("station "++id++" playing file "++fname.asAbsolutePath).postln;
 		fnames[swap]=(fname.asAbsolutePath).asString;
-		fnames[swap].postln;
 
 		// get sound file duration
 		p = Pipe.new("ffprobe -i '"++fname.asAbsolutePath++"' -show_format -v quiet | sed -n 's/duration=//p'", "r"); 
 		l = p.getLine;                    // get the first line
 		p.close;                    // close the pipe to avoid that nasty buildup
-		l.postln;
 
 		// get sound channels
 		p = Pipe.new("ffprobe -loglevel quiet -i '"++fname.asAbsolutePath++"' -show_streams -select_streams a:0 | grep channels | sed 's/channels=//g'", "r");
 		l2 = p.getLine;                    // get the first line
 		p.close;                    // close the pipe to avoid that nasty buildup
-		("channels: "++l2).postln;
+		// ("channels: "++l2).postln;
 
 		// get sound channels
 		p = Pipe.new("ffprobe -i '"++fname.asAbsolutePath++"' -show_streams -v quiet | sed -n 's/sample_rate=//p'", "r"); 
 		l3 = p.getLine;                    // get the first line
 		p.close;                    // close the pipe to avoid that nasty buildup
-		("sample rate: "++l3).postln;
+		// ("sample rate: "++l3).postln;
 
 		// for whatever reason, if file is corrupted then skip it
 		if (l.isNil||l2.isNil,{},{

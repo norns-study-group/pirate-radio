@@ -34,7 +34,7 @@ function fn.set_screen_dirty()
 end
 
 function fn.load_json(fname)
-  if not util.file_exists(filename) then
+  if not util.file_exists(fname) then
     do return end
   end
   local f = assert(io.open(fname,"rb"))

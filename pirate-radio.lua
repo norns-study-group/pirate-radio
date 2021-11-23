@@ -37,7 +37,6 @@ function init()
   dust2dust=dust2dust_:new({room="pirateradio"})
   sync.init()
 
-  --sync:download()
   radio.init()
   redraw_timer_init()
   debouncer_timer_init()
@@ -132,7 +131,6 @@ end
 function debouncer_timer_init()
   debouncetimer=metro.init(function()
     weather.init()
-    -- TODO: check what happens if this fails (i.e. no internet)
     sync:download()
     screen_dirty = true
   end,1,-1)
@@ -142,6 +140,7 @@ end
 
 function cleanup ()
   -- redrawtimer.free_all()
+  dust2dust:stop()
   norns.system_cmd(_path.code.."pirate-radio/supercollider/classes/stopogg.sh &")
   -- add more cleanup code
 end
