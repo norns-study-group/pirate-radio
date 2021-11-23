@@ -97,6 +97,14 @@ function fn.audio_metadata(fname)
   return metadata
 end
 
+function fn.shuffle(tbl)
+  for i = #tbl, 2, -1 do
+    local j = math.random(i)
+    tbl[i], tbl[j] = tbl[j], tbl[i]
+  end
+  return tbl
+end
+
 -------------------------------------------
 -- global variables
 -------------------------------------------
