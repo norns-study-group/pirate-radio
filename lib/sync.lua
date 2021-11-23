@@ -19,7 +19,6 @@ function sync:download(force)
     print("sync: have "..#files.." files downloaded")
     if #files>2 then 
       -- send message to sync with other norns
-      dust2dust:send({message="sync-radio"})
       radio.create_playlists_from_pirate_radio()
     end
   end)
