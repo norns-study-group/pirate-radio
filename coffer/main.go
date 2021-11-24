@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"math"
+	"math/rand"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -490,7 +491,15 @@ func saveFile(tempfname string, metadata map[string]string) (fname2 string, err 
 }
 
 func ToWaveform(fname string) (err error) {
-	out, err := exec.Command("ffprobe", "-i", fname, "-show_streams", "-v", "quiet").CombinedOutput()
+	fnameTemp := RandStringBytesMaskImpr(16) + ".wav"
+	defer os.Remove(fnameTemp)
+	out, err := exec.Command("ffmpeg", "-y", "-i", fname, fnameTemp).CombinedOutput()
+	if err != nil {
+		log.Error("ffmpeg error", err)
+		log.Errorf("%s", out)
+		return
+	}
+	out, err = exec.Command("ffprobe", "-i", fname, "-show_streams", "-v", "quiet").CombinedOutput()
 	if err != nil {
 		log.Error("ffprobe error", err)
 		log.Errorf("%s", out)
@@ -509,8 +518,7 @@ func ToWaveform(fname string) (err error) {
 			pixelsPerSecond = 1
 		}
 	}
-	fmt.Println("audiowaveform", "-i", fname, "--output-filename", fname+".json", "--pixels-per-second", fmt.Sprint(pixelsPerSecond), "--bits", "16")
-	out, err = exec.Command("audiowaveform", "-i", fname, "--output-filename", fname+".json", "--pixels-per-second", fmt.Sprint(pixelsPerSecond), "--bits", "16").CombinedOutput()
+	out, err = exec.Command("audiowaveform", "-i", fnameTemp, "--output-filename", fname+".json", "--pixels-per-second", fmt.Sprint(pixelsPerSecond), "--bits", "16").CombinedOutput()
 	if err != nil {
 		log.Error("audiowaveform error", err)
 		log.Errorf("%s", out)
@@ -564,4 +572,29 @@ func jsonResponse(w http.ResponseWriter, code int, data interface{}) {
 	}
 	log.Debugf("json response: %s", json)
 	fmt.Fprintf(w, "%s\n", json)
+}
+
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const (
+	letterIdxBits = 6                    // 6 bits to represent a letter index
+	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
+	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
+)
+
+func RandStringBytesMaskImpr(n int) string {
+	b := make([]byte, n)
+	// A rand.Int63() generates 63 random bits, enough for letterIdxMax letters!
+	for i, cache, remain := n-1, rand.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = rand.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
+			b[i] = letterBytes[idx]
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
+	}
+
+	return string(b)
 }
