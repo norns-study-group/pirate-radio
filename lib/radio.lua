@@ -98,12 +98,22 @@ function radio.create_playlists_from_sync(data)
     if data.playlists==nil then 
         do return end 
     end
-    radio.clear_stations()
-    
+    -- make sure files exists
+    local all_files_exist=true
     for i,v in ipairs(data.playlists) do
-        if util.file_exists(v.fname) then
-            radio.add_file_to_station(v.station,v.fname)
+        if not util.file_exists(v.fname) then
+            all_files_exist=false
         end
+    end
+    if not all_files_exist then 
+        print("create_playlists_from_sync: all files do not exist")
+        do return end 
+    end
+
+    radio.clear_stations()
+
+    for i,v in ipairs(data.playlists) do
+        radio.add_file_to_station(v.station,v.fname)
     end
 
     -- use the engine state to play a song from a current spot

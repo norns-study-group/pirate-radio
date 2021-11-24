@@ -67,7 +67,6 @@ function tuner:set_dial_brightness()
   -- print("tuner_brightness",level)
 end
 
-
 function tuner:redraw()
   -- draw the ui here
   for i=1,#tuner.components,1 do
@@ -76,9 +75,13 @@ function tuner:redraw()
   screen.move(120,40)
   screen.level(math.floor(util.linexp(0,1,2,15.9,oscin.get_signal_strength())))
   screen.font_size(24)
-  -- TODO: replace radio.dial with params
-  screen.text_right(string.format("%2.2f",params:get("tuner")))
+  screen.text_right(string.format("%2.1f",params:get("tuner")))
   screen.font_size(8)
+  if current_station_image~=nil and current_station_image~="" then 
+    if util.file_exists(current_station_image) then 
+      screen.display_png(current_station_image,4,22)
+    end
+  end
 end
 
 return tuner

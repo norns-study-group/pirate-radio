@@ -67,12 +67,14 @@ function Marquee:update_playing_info(band)
   end
   if closest_station==0 then 
     self.text=""
+    current_station_image=nil
     do return end 
   end
   local i=closest_station
   if self.station_text[i]~=nil then 
     self.text=self.station_text[i]
   end
+  current_station_image=radio_stations[i].image
 end
 
 return Marquee
