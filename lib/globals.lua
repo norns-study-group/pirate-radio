@@ -105,6 +105,22 @@ function fn.shuffle(tbl)
   return tbl
 end
 
+-- convert seconds into hour:minute:seconds.milliseconds
+function fn.ffmpeg_seconds_format(seconds)
+  local hours=0
+  local minutes=0
+  while seconds > 60 do
+	minutes = minutes + 1
+	seconds = seconds - 60
+  end
+  while minutes > 60 do 
+	  minutes = minutes - 60
+	  hours = hours +1
+  end
+  seconds=math.floor(seconds*10)/10
+  return string.format("%02d:%02d:%04.1f",hours,minutes,seconds)
+end
+
 -------------------------------------------
 -- global variables
 -------------------------------------------

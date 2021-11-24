@@ -111,7 +111,16 @@ function radio.create_playlists_from_sync(data)
     -- use the engine state to play a song from a current spot
     for _,v in ipairs(data.engine_state) do
       print("syncing station",v.station,v.playlist,v.file,v.pos)
-      engine.syncStation(tonumber(v.station),tonumber(v.playlist),v.file,tonumber(v.pos))
+      local fname="/dev/shm/"..math.random()..".ogg"
+      print("creating temp file "..fname)
+      os.execute("ffmpeg -loglevel panic -i "..v.file.." -ss "..fn.ffmpeg_seconds_format(v.pos).." "..fname)
+      local file_duration=util.os_capture("ffprobe -i "..fname.." -show_format -v quiet | sed -n 's/duration=//p'")
+      print("file new duration: "..file_duration)
+      clock.run(function()
+	 clock.sleep(file_duration+3)
+	 os.execute("rm "..fname)
+      end)
+      engine.syncStation(tonumber(v.station),tonumber(v.playlist),fname,tonumber(v.pos))
     end
 
     radio.pirate_radio_enabled=true
