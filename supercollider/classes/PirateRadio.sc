@@ -145,6 +145,20 @@ PirateRadio {
 			snd = Limiter.ar(snd, threshold, lookahead).clip(-1, 1);
 			Out.ar(0, snd);
 		}.play(target:server, args:[\in, outputBus.index], addAction:\addToTail);
+
+		// send periodic information to norns
+		Routine{
+			inf.do{
+				5.sleep;
+				(0..numStreams-1).do({arg i;
+				    NetAddr("127.0.0.1", 10111).sendMsg("info",
+				    	"station",i,
+				    	"file",streamPlayers[i].fnames[streamPlayers[i].swap],
+				    	"pos",Main.elapsedTime - streamPlayers[i].fileCurrentPos,
+				    );
+				});
+			}
+		}.play;
 	}
 
 	// set file location
@@ -159,6 +173,25 @@ PirateRadio {
 		});
 	}
 
+	getEngineState {
+		var nStreams=streamPlayers.size-1;
+		var msg=List.new();
+		msg.add("enginestate");
+		(0..nStreams).do({arg i;
+			("station"++i).postln;
+			msg.add("station");
+			msg.add(i);
+			msg.add("file");
+			msg.add(streamPlayers[i].fnames[streamPlayers[i].swap]);
+			msg.add("pos");		
+			msg.add(Main.elapsedTime - streamPlayers[i].fileCurrentPos);
+			msg.add("playlist");
+			msg.add(streamPlayers[i].fileIndexCurrent);
+		});
+		NetAddr("127.0.0.1", 10111).sendMsg(*msg);
+	}
+
+
 	// set the dial position
 	setDial {
 		arg value;
@@ -171,15 +204,16 @@ PirateRadio {
 		streamPlayers[i].setBand(band,bandwidth);
 	}
 
-	// setNextFile queues up a particular file for a station
-	setNextFile {
-		arg i,fname;
-		streamPlayers[i].setNextFile(fname);
-	}
-
 	addFile {
 		arg i,fname;
 		streamPlayers[i].addFile(fname);
+	}
+
+	syncStation {
+		arg i, playlistPosition, currentFileName, currentTime;
+		streamPlayers[i].setPlaylistPosition(playlistPosition);
+		streamPlayers[i].stopCurrent();
+		streamPlayers[i].playFile(currentFileName,currentTime);
 	}
 
 	clearFiles {
@@ -266,6 +300,8 @@ PradStreamPlayer {
 	var <filePaths;
 	var <fileIndexCurrent;
 	var <fileSpecial;
+	var <fileCurrentPos;
+	var <fileScheduler;
 
 	*new {
 		arg idArg, serverArg, outBusArg, outStrengthBusArg, inDialBusArg;
@@ -284,6 +320,8 @@ PradStreamPlayer {
 		swap = 0;
 		crossfade=1;
 		fileIndexCurrent=(-1);
+		fileCurrentPos=0;
+		fileScheduler=0;
 		synths=Array.newClear(2);
 		bufs=Array.newClear(2);
 		mp3s=Array.newClear(2);
@@ -323,33 +361,45 @@ PradStreamPlayer {
 	}
 
 	playFile {
-		arg fname;
-		var p,l,l2;
-		var durationSeconds=1,numChannels=2;
+		arg fname, startSeconds=0;
+		var p,l,l2,l3;
+		var durationSeconds=1,numChannels=2,numFrames=1.0;
 		var xfade=0;
+		var currentFileScheduler=0;
 
 		// swap synths/buffers
 		swap=1-swap;
 		("station "++id++" playing file "++fname.asAbsolutePath).postln;
 		fnames[swap]=(fname.asAbsolutePath).asString;
-		fnames[swap].postln;
+
+		// send update to server that a song is playing
+		NetAddr("127.0.0.1", 10111).sendMsg("playing",id,fnames[swap]);
 
 		// get sound file duration
 		p = Pipe.new("ffprobe -i '"++fname.asAbsolutePath++"' -show_format -v quiet | sed -n 's/duration=//p'", "r"); 
 		l = p.getLine;                    // get the first line
 		p.close;                    // close the pipe to avoid that nasty buildup
-		l.postln;
 
 		// get sound channels
 		p = Pipe.new("ffprobe -loglevel quiet -i '"++fname.asAbsolutePath++"' -show_streams -select_streams a:0 | grep channels | sed 's/channels=//g'", "r");
 		l2 = p.getLine;                    // get the first line
 		p.close;                    // close the pipe to avoid that nasty buildup
-		("channels: "++l2).postln;
+		// ("channels: "++l2).postln;
+
+		// get sound channels
+		p = Pipe.new("ffprobe -i '"++fname.asAbsolutePath++"' -show_streams -v quiet | sed -n 's/sample_rate=//p'", "r"); 
+		l3 = p.getLine;                    // get the first line
+		p.close;                    // close the pipe to avoid that nasty buildup
+		// ("sample rate: "++l3).postln;
 
 		// for whatever reason, if file is corrupted then skip it
 		if (l.isNil||l2.isNil,{},{
 			numChannels=l2.asInteger;
+			numFrames=l3.asFloat;
 			durationSeconds=l.asFloat;
+			if (startSeconds<durationSeconds,{
+				durationSeconds=durationSeconds-startSeconds;
+			});
 			// if the file length is less than crossfade, reconfigure xfade
 			xfade=crossfade;
 			if (xfade>(durationSeconds/3),{
@@ -364,10 +414,10 @@ PradStreamPlayer {
 				if (mp3s[swap]!=nil,{
 					mp3s[swap].finish;
 				});
-				mp3s[swap]=MP3(fname.absolutePath,\readfile,\ogg);
+				mp3s[swap]=MP3(fname.absolutePath,\readfile,\ogg,startSeconds);
 				bufs[swap]=Buffer.cueSoundFile(server,mp3s[swap].fifo,numChannels:numChannels);
 			},{
-				bufs[swap]=Buffer.cueSoundFile(server,fname.absolutePath,numChannels:numChannels);
+				bufs[swap]=Buffer.cueSoundFile(server,fname.absolutePath,startFrame:startSeconds*server.sampleRate, numChannels:numChannels);
 			});
 
 			// replace our current synth with the new one (preserves order)
@@ -415,12 +465,21 @@ PradStreamPlayer {
 				\out,outBus.index,\bufnum,bufs[swap]],addAction:\addReplace);
 		});
 		// start a clock to queue the next file (before current is done)
+		fileCurrentPos=Main.elapsedTime;
+		fileScheduler=fileScheduler+1;
+		currentFileScheduler=fileScheduler;
 		SystemClock.sched(durationSeconds-xfade, {
-			this.playNextFile;
+			if (currentFileScheduler==fileScheduler,{
+				this.playNextFile;
+			});
 			nil
 		});
 	}
 
+	setPlaylistPosition {
+		arg i;
+		fileIndexCurrent=i;
+	}
 
 	setBand {
 		arg ba,bw;
@@ -442,14 +501,10 @@ PradStreamPlayer {
 		filePaths=List();
 	}
 
-	// setNextFile will override the playlist and queue up specified file next
-	setNextFile {
-		arg fname;
-		fileSpecial=fname;
-	}
-
 	stopCurrent {
 		synths[swap].set(\toggle,0);
+		// this ensures its clock won't fire
+		fileScheduler=fileScheduler+1;
 	}
 
 	////////////////

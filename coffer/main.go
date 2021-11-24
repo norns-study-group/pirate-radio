@@ -8,12 +8,16 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math"
+	"math/rand"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -25,8 +29,21 @@ const ContentDirectory = "uploads"
 
 var indexHTML []byte
 
+type MetadataInfo struct {
+	File         string
+	OriginalFile string
+	Band         string
+	Artist       string
+	OtherInfo    string
+	BPM          string
+	Date         string
+}
+
+var metadataSaved map[string]MetadataInfo
+
 func main() {
 	port := 8730
+	metadataSaved = make(map[string]MetadataInfo)
 	os.MkdirAll(ContentDirectory, 0644)
 	log.SetLevel("debug")
 	log.Infof("listening on :%d", port)
@@ -62,7 +79,12 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 	} else if r.URL.Path == "/uploads" {
 		// return a list of files
 		return handleListUploads(w, r)
+	} else if r.URL.Path == "/uploads2" {
+		// return a list of files
+		return handleListUploadsWithMetadata(w, r)
 	} else if strings.HasSuffix(r.URL.Path, "ogg") {
+		return handleServeFile(w, r)
+	} else if strings.HasSuffix(r.URL.Path, "ogg.json") {
 		return handleServeFile(w, r)
 	} else if r.URL.Path == "/uploader" {
 		return handleBrowserUpload(w, r)
@@ -70,19 +92,17 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 		if r.Method == "POST" {
 			return handleBrowserUpload(w, r)
 		} else {
-			return handleServeIndex(w, r, `instructions - 
-upload: click "Browse" and select one or more files. 
-(optional) check "use band" and enter the band. 
-click "upload" to upload those files to the server.
-
-delete: check "delete". 
-click "Browse" and select the original files you uploaded. 
-click "upload" and those files will be used to determine and 
-delete the server files.
-`)
+			return handleServeIndex(w, r, ``)
 		}
 	} else if strings.HasPrefix(r.URL.Path, "/static/") {
-
+	} else if strings.HasPrefix(r.URL.Path, "/radio_stations.json") {
+		var b []byte
+		b, err = ioutil.ReadFile("../lib/radio_stations.json")
+		if err != nil {
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(b)
 	} else {
 		w.Write([]byte("ok"))
 	}
@@ -102,10 +122,27 @@ func handleServeIndex(w http.ResponseWriter, r *http.Request, data string) (err 
 }
 
 func handleServeFile(w http.ResponseWriter, r *http.Request) (err error) {
+
 	fname := strings.TrimPrefix(r.URL.Path, "/")
 	_, fname = filepath.Split(fname)
 	fname = path.Join(ContentDirectory, fname)
-	log.Debug(fname)
+
+	if strings.HasSuffix(fname, ".ogg.json") {
+		fnameOgg := strings.TrimSuffix(fname, ".json")
+		if _, err = os.Stat(fnameOgg); err != nil {
+			log.Error("no such file")
+			return
+		}
+		if _, err = os.Stat(fname); err != nil {
+			// create wavefeorm
+			err = ToWaveform(fnameOgg)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+		}
+		w.Header().Set("Content-Type", "application/json")
+	}
 	f, err := os.Open(fname)
 	defer f.Close()
 	if err != nil {
@@ -143,7 +180,7 @@ func handleCurlUpload(w http.ResponseWriter, r *http.Request) (err error) {
 		return
 	}
 
-	fname2, err := saveFile(tempfile.Name(), false, "90")
+	fname2, err := saveFile(tempfile.Name(), make(map[string]string))
 	if err != nil {
 		fmt.Fprintf(w, "%s\n", err.Error())
 		return
@@ -163,9 +200,8 @@ func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) 
 			errBig = handleServeIndex(w, r, errBig.Error())
 		}
 	}()
-	band := ""
-	useband := false
 	dodelete := false
+	metadata := make(map[string]string)
 	// define some variables used throughout the function
 	// n: for keeping track of bytes read and written
 	// err: for storing errors that need checking
@@ -230,33 +266,29 @@ func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) 
 		log.Debugf("Uploaded filesize: %d bytes", filesize)
 		tempfile.Close()
 
-		if part.FormName() == "band" {
-			b, err := ioutil.ReadFile(tempfile.Name())
+		log.Debug("form: ", part.FormName())
+		if part.FormName() == "metaband" ||
+			part.FormName() == "metaartist" ||
+			part.FormName() == "metaotherinfo" {
+			bs, err := getFileContents(tempfile.Name())
 			if err != nil {
 				log.Error(err)
 				return
 			}
-			band = string(b)
+			log.Debugf("meta data: %s -> '%s'", part.FormName(), bs)
+			metadata[part.FormName()] = bs
 			continue
 		} else if part.FormName() == "dodelete" {
-			b, err := ioutil.ReadFile(tempfile.Name())
+			bs, err := getFileContents(tempfile.Name())
 			if err != nil {
 				log.Error(err)
 				return
 			}
-			dodelete = string(b) == "on"
-			continue
-		} else if part.FormName() == "useband" {
-			b, err := ioutil.ReadFile(tempfile.Name())
-			if err != nil {
-				log.Error(err)
-				return
-			}
-			useband = string(b) == "on"
+			dodelete = bs == "on"
 			continue
 		}
 
-		log.Debugf("%s: %s", useband, band)
+		metadata["metafile"] = part.FileName()
 		log.Debugf("Uploaded filename: %s", part.FileName())
 		log.Debugf("Uploaded mimetype: %s", part.Header)
 
@@ -267,7 +299,7 @@ func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) 
 			doing = "deleted"
 		} else {
 			removeFile(tempfile.Name()) // remove file if it exists
-			fname2, err = saveFile(tempfile.Name(), useband, band)
+			fname2, err = saveFile(tempfile.Name(), metadata)
 		}
 		if err != nil {
 			returnText = returnText + fmt.Sprintf("error on '%s': %s\n", part.FileName(), err.Error())
@@ -280,8 +312,17 @@ func handleBrowserUpload(w http.ResponseWriter, r *http.Request) (errBig error) 
 	return
 }
 
-func handleListUploads(w http.ResponseWriter, r *http.Request) (err error) {
+func getFileContents(fname string) (s string, err error) {
+	b, err := ioutil.ReadFile(fname)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	s = string(b)
+	return
+}
 
+func handleListUploads(w http.ResponseWriter, r *http.Request) (err error) {
 	fileList, err := filepath.Glob("uploads/*.ogg")
 	// strip prefix
 	for i, f := range fileList {
@@ -290,6 +331,80 @@ func handleListUploads(w http.ResponseWriter, r *http.Request) (err error) {
 	if err == nil {
 		jsonResponse(w, http.StatusOK, map[string][]string{"uploads": fileList})
 	}
+	return
+}
+
+func handleListUploadsWithMetadata(w http.ResponseWriter, r *http.Request) (err error) {
+	fileList, err := filepath.Glob("uploads/*.ogg")
+	// strip prefix
+	var uploads []MetadataInfo
+	for i, f := range fileList {
+		var fileHash string
+		fileList[i] = filepath.Base(f)
+		fileHash, err = Filemd5Sum(f)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		if _, ok := metadataSaved[fileHash]; !ok {
+			// collect metadata
+			m, errM := collectMetaData(f)
+			if errM == nil {
+				metadataSaved[fileHash] = m
+			}
+		}
+		if _, ok := metadataSaved[fileHash]; ok {
+			uploads = append(uploads, metadataSaved[fileHash])
+		}
+	}
+	if err == nil {
+		jsonResponse(w, http.StatusOK, uploads)
+	}
+	return
+}
+
+func collectMetaData(fname string) (m MetadataInfo, err error) {
+	m.File = filepath.Base(fname)
+
+	out, err := exec.Command("ffprobe", "-i", fname, "-show_streams", "-v", "quiet").CombinedOutput()
+	if err != nil {
+		log.Error("ffprobe error", err)
+		log.Errorf("%s", out)
+		return
+	}
+	var r *regexp.Regexp
+	var foo []string
+	r, _ = regexp.Compile(`TAG:metafile='(.+)'`)
+	foo = r.FindStringSubmatch(string(out))
+	if len(foo) > 1 {
+		m.OriginalFile = foo[1]
+	}
+	r, _ = regexp.Compile(`TAG:metaband='(.+)'`)
+	foo = r.FindStringSubmatch(string(out))
+	if len(foo) > 1 {
+		m.Band = foo[1]
+	}
+	r, _ = regexp.Compile(`TAG:metaartist='(.+)'`)
+	foo = r.FindStringSubmatch(string(out))
+	if len(foo) > 1 {
+		m.Artist = foo[1]
+	}
+	r, _ = regexp.Compile(`TAG:metabpm='(.+)'`)
+	foo = r.FindStringSubmatch(string(out))
+	if len(foo) > 1 {
+		m.BPM = foo[1]
+	}
+	r, _ = regexp.Compile(`TAG:metaotherinfo='(.+)'`)
+	foo = r.FindStringSubmatch(string(out))
+	if len(foo) > 1 {
+		m.OtherInfo = foo[1]
+	}
+	r, _ = regexp.Compile(`TAG:metadate='(.+)'`)
+	foo = r.FindStringSubmatch(string(out))
+	if len(foo) > 1 {
+		m.Date = foo[1]
+	}
+
 	return
 }
 
@@ -351,8 +466,8 @@ func removeFile(tempfname string) (fname2 string, err error) {
 	return
 }
 
-func saveFile(tempfname string, useBand bool, band string) (fname2 string, err error) {
-	fname, err := ToOgg(tempfname)
+func saveFile(tempfname string, metadata map[string]string) (fname2 string, err error) {
+	fname, err := ToOgg(tempfname, metadata)
 	if err != nil {
 		log.Debugf("error converting: %s", err.Error())
 		return
@@ -364,18 +479,56 @@ func saveFile(tempfname string, useBand bool, band string) (fname2 string, err e
 		return
 	}
 
-	fname2 = hash + "-" + time.Now().Format("20060102")
-	if useBand {
-		fname2 = fname2 + "-" + band
-	}
-	fname2 += ".ogg"
+	fname2 = hash + ".ogg"
 	err = os.Rename(fname, path.Join(ContentDirectory, fname2))
+	if err != nil {
+		log.Warn(err)
+		return
+	}
+
 	log.Debugf("saved %s", fname2)
 	return
 }
 
-func ToOgg(fname string) (fname2 string, err error) {
+func ToWaveform(fname string) (err error) {
+	fnameTemp := RandStringBytesMaskImpr(16) + ".wav"
+	defer os.Remove(fnameTemp)
+	out, err := exec.Command("ffmpeg", "-y", "-i", fname, fnameTemp).CombinedOutput()
+	if err != nil {
+		log.Error("ffmpeg error", err)
+		log.Errorf("%s", out)
+		return
+	}
+	out, err = exec.Command("ffprobe", "-i", fname, "-show_streams", "-v", "quiet").CombinedOutput()
+	if err != nil {
+		log.Error("ffprobe error", err)
+		log.Errorf("%s", out)
+		return
+	}
+	r, _ := regexp.Compile(`duration=(\d+.\d+)`)
+	foo := r.FindStringSubmatch(string(out))
+	duration := 0.0
+	if len(foo) > 1 {
+		duration, _ = strconv.ParseFloat(foo[1], 64)
+	}
+	pixelsPerSecond := 1.0
+	if duration > 0 {
+		pixelsPerSecond = math.Floor(800 / duration)
+		if pixelsPerSecond == 0 {
+			pixelsPerSecond = 1
+		}
+	}
+	out, err = exec.Command("audiowaveform", "-i", fnameTemp, "--output-filename", fname+".json", "--pixels-per-second", fmt.Sprint(pixelsPerSecond), "--bits", "16").CombinedOutput()
+	if err != nil {
+		log.Error("audiowaveform error", err)
+		log.Errorf("%s", out)
+	}
+	return
+}
+
+func ToOgg(fname string, metadata map[string]string) (fname2 string, err error) {
 	isMusic := false
+	// check if music
 	for _, v := range []string{"wav", "ogg", "mp3", "m4a", "flac"} {
 		if strings.Contains(fname, v) {
 			isMusic = true
@@ -385,9 +538,27 @@ func ToOgg(fname string) (fname2 string, err error) {
 		err = fmt.Errorf("%s is not music", fname)
 		return
 	}
-	// check if music
+
+	// try to determine tempo
+	out, err := exec.Command("aubio", "tempo", fname).CombinedOutput()
+	if err != nil {
+		log.Error("could not compute tempo")
+		log.Debugf("out: %s", out)
+	}
+	foo := strings.Fields(string(out))
+	if len(foo) > 0 {
+		metadata["metabpm"] = foo[0]
+	}
+	metadata["metadate"] = time.Now().Format(time.RFC3339)
+
 	fname2 = strings.TrimSuffix(fname, filepath.Ext(fname)) + ".ogg"
-	_, err = exec.Command("ffmpeg", "-y", "-i", fname, "-ar", "48000", fname2).CombinedOutput()
+	cmd := []string{"-y", "-i", fname, "-ar", "48000"}
+	for k, v := range metadata {
+		cmd = append(cmd, "-metadata")
+		cmd = append(cmd, fmt.Sprintf("%s='%s'", k, strings.Replace(v, "'", "", -1)))
+	}
+	cmd = append(cmd, fname2)
+	_, err = exec.Command("ffmpeg", cmd...).CombinedOutput()
 	return
 }
 
@@ -401,4 +572,29 @@ func jsonResponse(w http.ResponseWriter, code int, data interface{}) {
 	}
 	log.Debugf("json response: %s", json)
 	fmt.Fprintf(w, "%s\n", json)
+}
+
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const (
+	letterIdxBits = 6                    // 6 bits to represent a letter index
+	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
+	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
+)
+
+func RandStringBytesMaskImpr(n int) string {
+	b := make([]byte, n)
+	// A rand.Int63() generates 63 random bits, enough for letterIdxMax letters!
+	for i, cache, remain := n-1, rand.Int63(), letterIdxMax; i >= 0; {
+		if remain == 0 {
+			cache, remain = rand.Int63(), letterIdxMax
+		}
+		if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
+			b[i] = letterBytes[idx]
+			i--
+		}
+		cache >>= letterIdxBits
+		remain--
+	}
+
+	return string(b)
 }

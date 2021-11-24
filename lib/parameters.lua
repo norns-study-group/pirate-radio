@@ -46,6 +46,10 @@ function parameters.tuner_func()
   local settings_value = params:get("tuner")
   tuner:set_dial_loc(settings_value,true)
   parameters.save_settings({setting_name,settings_value})
+  -- update the marquee
+  if marquee~=nil then
+    marquee:update_playing_info(settings_value)
+  end
 end
 
 parameters.add_params = function()

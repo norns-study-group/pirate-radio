@@ -3,48 +3,179 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>🏴‍☠️</title>
+    <link rel="stylesheet" href="/static/normalize.css">
+    <link rel="stylesheet" href="/static/skeleton.css">
     <style>
-        body{max-width:650px;margin:40px auto;padding:0 10px;}
+        body{
+            max-width:750px;margin:20px auto;padding:0 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.3em;
+        }
 
-.preview {
-    margin-top: 2em;
-}
+    .preview {
+        margin-top: 0.5em;
+    }
+    th, td {
+        border-bottom: 0px;
+    }
+    .fr {
+        float: right;
+    }
 </style>
 </head>
 
 <body>
-    <pre>XX</pre>
-    <div id="app">
-        <form enctype="multipart/form-data" action="/" method="post">
-            <input type="checkbox" id="useband" name="useband" v-model="checked" v-if="!dchecked">
-            <label for="useband" v-if="!dchecked">set band</label>&nbsp;
-            <input type="checkbox" id="dodelete" name="dodelete" v-model="dchecked" v-if="!checked">
-            <label for="dodelete"  v-if="!checked">delete</label>
-            <input type="number" v-if="checked" id="band" name="band" min=70 max=140 value="88.6" step="0.1" /><br>
-            <input type="file" name="files" multiple />
-            <input type="submit" value="upload" />
-        </form>
-        <div v-for="upload in uploads" class="preview">
-            <pre>{{upload}}</pre>
-            <audio controls>
-                <source v-bind:src="upload" type="audio/ogg">
-                Your browser does not support the audio tag.
-            </audio>
+    <div class="container">
+        <div id="app">
+            <p>
+                <div v-for="line in message.split(/\r?\n/)" class="row">
+                    {{line}}
+                </div>
+            </p>
+            <h5>contribute</h5>
+            <form enctype="multipart/form-data" action="/" method="post">
+                <div class="row">
+                    <div class="twelve columns">
+                        <label for="metaband">select station <a href="https://github.com/norns-study-group/pirate-radio/edit/main/lib/radio_stations.json" target="_blank">or make your own</a></label>
+                        <select class="u-full-width" id="metaband" name="metaband">
+                            <option v-for="station in radio_stations" :value="station.band" v-if="station.allow_uploads!=false">{{station.name}} - "{{station.description}}" ({{station.band}})</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="six columns">
+                        <label for="metaartist">artist</label>
+                        <input class="u-full-width" type="text" placeholder="(optional)" name="metaartist" id="metaartist">
+                    </div>
+                    <div class="six columns">
+                        <label for="metaotherinfo">other info</label>
+                        <input class="u-full-width" type="text" placeholder="(optional)" name="metaotherinfo" id="metaotherinfo">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="three columns">
+                        <label for="dodelete">delete</label>
+                        <input type="checkbox" id="dodelete" name="dodelete">
+                    </div>
+                    <div class="nine columns">
+                        <label for="files">choose file(s)</label>
+                        <input type="file" name="files" multiple>
+                    </div>
+                </div>
+                <input class="button" class="u-full-width" type="submit" value="upload">
+            </form>
+            <h5>uploads</h5>
+            <div v-for="upload in uploads" class="preview">
+                <div class="row">
+                    <div class="nine columns">
+                        <strong><a v-bind:href="'/'+upload.File">{{upload.File}}</a></strong>
+                    </div>
+                    <div class="three columns fr">
+                        <strong v-if=upload.Band>@ {{upload.Band}}</strong>
+                    </div>
+                </div>
+                <div class="row">
+                    <small v-if=upload.OriginalFile>
+                        <div class="twelve columns">
+                            ({{upload.OriginalFile}}<span v-if=upload.Artist> from '{{upload.Artist}}'</span><span v-if=upload.Date> on '{{upload.Date}}'</span>)
+                        </div>
+                    </small>
+                </div>
+                <div class="row">
+                    <audio controls>
+                        <source v-bind:src="upload.File" type="audio/ogg">
+                        Your browser does not support the audio tag.
+                    </audio>
+                </div>
+            </div>
         </div>
     </div>
+    <script src="/static/wavesurfer.js"></script>
     <script src="/static/vue.js"></script>
     <script>
+    function convertAudioTags() {
+        var els = document.querySelectorAll("audio");
+        var elsrc = document.querySelectorAll("source");
+        console.log(els);
+        for (var i = 0; i < els.length; i++) {
+            console.log(elsrc[i].src);
+            let i_ = i;
+            let src_ = elsrc[i].src;
+            let newNode = document.createElement("div")
+            newNode.innerHTML = `<table style="padding-top:16px;padding-bottom:16px;"><tr><td style="position: relative;top: 4px;width:40px;"><div class="controls" style=""> <button class="audiobtn" data-action="play" style="background: #fff; border: none; padding-left:0;padding-right:0;"> <svg class="playicon" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather feather-play-circle"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg> <svg class="pauseicon" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather feather-pause-circle"><circle cx="12" cy="12" r="10"></circle><line x1="10" y1="15" x2="10" y2="9"></line><line x1="14" y1="15" x2="14" y2="9"></line></svg> </button></div></td><td width="100%"><div class="wave"></div></td></tr></table>`;
+            els[i_].parentNode.insertBefore(newNode, els[i_])
+            els[i].remove();
+            let wavesurfer = WaveSurfer.create({
+                container: document.getElementsByClassName("wave")[i_],
+                waveColor: '#909090',
+                progressColor: '#443e3c',
+                cursorColor: '#ffffff',
+                backend: 'MediaElement',
+                mediaControls: false,
+                hideScrollbar: true,
+                minPxPerSec: 120,
+                normalize: true,
+                height: 64,
+            });
+            wavesurfer.once('ready', function() {
+                console.log('Using wavesurfer.js ' + WaveSurfer.VERSION);
+            });
+            wavesurfer.on('error', function(e) {
+                console.warn(e);
+            });
+            wavesurfer.on('play', function(e) {
+                document.getElementsByClassName("playicon")[i_].style.display = "none";
+                document.getElementsByClassName("pauseicon")[i_].style.display = "block";
+            });
+            wavesurfer.on('pause', function(e) {
+                document.getElementsByClassName("playicon")[i_].style.display = "block";
+                document.getElementsByClassName("pauseicon")[i_].style.display = "none";
+            });
+            newNode.querySelector('[data-action="play"]')
+                .addEventListener('click', wavesurfer.playPause.bind(wavesurfer));
+            fetch(src_ + ".json")
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("HTTP error " + response.status);
+                    }
+                    return response.json();
+                })
+                .then(peaks => {
+                    console.log('loaded peaks! sample_rate: ' + peaks.sample_rate);
+
+                    // load peaks into wavesurfer.js
+                    wavesurfer.load(src_, peaks.data);
+                })
+                .catch((e) => {
+                    console.error('error', e);
+                });
+            // wavesurfer.load(src_);
+        }
+    }
     var app = new Vue({
         el: '#app',
         data: {
+            message: `XX`,
             dchecked: false,
             checked: false,
+            radio_stations: [],
             uploads: []
         },
         created() {
-            fetch("/uploads")
+            fetch("/uploads2")
                 .then(response => response.json())
-                .then(data => (this.uploads = data.uploads));
+                .then(data => (this.uploads = data));
+            fetch("/radio_stations.json")
+                .then(response => response.json())
+                .then(data => (this.radio_stations = data));
+        },
+        watch: {
+            uploads: function(val) {
+                console.log("uploads changed")
+                setTimeout(function() {
+                    convertAudioTags();
+                }, 100);
+            }
         }
     })
     </script>

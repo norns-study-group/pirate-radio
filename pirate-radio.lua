@@ -32,9 +32,11 @@ function init()
   prereqs.install()
   tuner.init()
   eq.init()
-  sync.init()
   oscin.init()
-  --sync:download()
+  -- dust2dust needs to be defined after oscin
+  dust2dust=dust2dust_:new({room="pirateradio"})
+  sync.init()
+
   radio.init()
   redraw_timer_init()
   debouncer_timer_init()
@@ -45,6 +47,9 @@ function init()
   parameters.load_settings()
 
   params:bang()
+
+  -- define the global marquee for the lower right banner
+  marquee=Marquee:new()
 
   initializing = false
 end
@@ -107,7 +112,7 @@ local menu_activated = false
 function redraw_timer_init()
   redrawtimer=metro.init(function()
     local menu_status=norns.menu.status()
-    if menu_status==false and initializing==false and screen_dirty==true then
+    if menu_status==false and initializing==false then
       pirate_radio_pages.update_pages()
       screen_dirty=false
     elseif menu_status==false and initializing==false and menu_activated == true then
@@ -127,10 +132,14 @@ end
 -- that may fail if there is no connection)
 --------------------------
 function debouncer_timer_init()
+  local inited=false
   debouncetimer=metro.init(function()
-    weather.init()
-    -- TODO: check what happens if this fails (i.e. no internet)
-    sync:download()
+    if not inited then
+      inited=true
+      weather.init()
+      sync:download()
+      dust2dust:send({message="need-sync"})
+    end
     screen_dirty = true
   end,1,-1)
   debouncetimer:start()
@@ -139,6 +148,7 @@ end
 
 function cleanup ()
   -- redrawtimer.free_all()
+  dust2dust:stop()
   norns.system_cmd(_path.code.."pirate-radio/supercollider/classes/stopogg.sh &")
   -- add more cleanup code
 end
