@@ -411,8 +411,8 @@ PradStreamPlayer {
 				if (mp3s[swap]!=nil,{
 					mp3s[swap].finish;
 				});
-				mp3s[swap]=MP3(fname.absolutePath,\readfile,\ogg);
-				bufs[swap]=Buffer.cueSoundFile(server,mp3s[swap].fifo,startFrame:startSeconds*server.sampleRate, numChannels:numChannels);
+				mp3s[swap]=MP3(fname.absolutePath,\readfile,\ogg,startSeconds);
+				bufs[swap]=Buffer.cueSoundFile(server,mp3s[swap].fifo,numChannels:numChannels);
 			},{
 				bufs[swap]=Buffer.cueSoundFile(server,fname.absolutePath,startFrame:startSeconds*server.sampleRate, numChannels:numChannels);
 			});
