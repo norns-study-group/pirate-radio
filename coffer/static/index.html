@@ -71,13 +71,13 @@
                         <strong><a v-bind:href="'/'+upload.File">{{upload.File}}</a></strong>
                     </div>
                     <div class="three columns fr">
-                        <strong>@ {{upload.Band}}</strong>
+                        <strong v-if=upload.Band>@ {{upload.Band}}</strong>
                     </div>
                 </div>
                 <div class="row">
-                    <small>
+                    <small v-if=upload.OriginalFile>
                         <div class="twelve columns">
-                            ({{upload.OriginalFile}}<span v-if=upload.Artist> from '{{upload.Artist}}'</span> <span v-if=upload.Date> from '{{upload.Date}}'</span> )
+                            ({{upload.OriginalFile}}<span v-if=upload.Artist> from '{{upload.Artist}}'</span><span v-if=upload.Date> on '{{upload.Date}}'</span>)
                         </div>
                     </small>
                 </div>
