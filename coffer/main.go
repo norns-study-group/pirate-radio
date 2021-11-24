@@ -8,12 +8,15 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"math"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -64,6 +67,8 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 		return handleListUploads(w, r)
 	} else if strings.HasSuffix(r.URL.Path, "ogg") {
 		return handleServeFile(w, r)
+	} else if strings.HasSuffix(r.URL.Path, "ogg.json") {
+		return handleServeFile(w, r)
 	} else if r.URL.Path == "/uploader" {
 		return handleBrowserUpload(w, r)
 	} else if r.URL.Path == "/" {
@@ -100,10 +105,27 @@ func handleServeIndex(w http.ResponseWriter, r *http.Request, data string) (err 
 }
 
 func handleServeFile(w http.ResponseWriter, r *http.Request) (err error) {
+
 	fname := strings.TrimPrefix(r.URL.Path, "/")
 	_, fname = filepath.Split(fname)
 	fname = path.Join(ContentDirectory, fname)
-	log.Debug(fname)
+
+	if strings.HasSuffix(fname, ".ogg.json") {
+		fnameOgg := strings.TrimSuffix(fname, ".json")
+		if _, err = os.Stat(fnameOgg); err != nil {
+			log.Error("no such file")
+			return
+		}
+		if _, err = os.Stat(fname); err != nil {
+			// create wavefeorm
+			err = ToWaveform(fnameOgg)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+		}
+		w.Header().Set("Content-Type", "application/json")
+	}
 	f, err := os.Open(fname)
 	defer f.Close()
 	if err != nil {
@@ -369,7 +391,42 @@ func saveFile(tempfname string, metadata map[string]string) (fname2 string, err 
 
 	fname2 = hash + ".ogg"
 	err = os.Rename(fname, path.Join(ContentDirectory, fname2))
+	if err != nil {
+		log.Warn(err)
+		return
+	}
+
 	log.Debugf("saved %s", fname2)
+	return
+}
+
+func ToWaveform(fname string) (err error) {
+	fmt.Println("ffprobe", "-i", fname, "-show_streams", "-v", "quiet")
+	out, err := exec.Command("ffprobe", "-i", fname, "-show_streams", "-v", "quiet").CombinedOutput()
+	if err != nil {
+		log.Error("ffprobe error", err)
+		log.Errorf("%s", out)
+		return
+	}
+	r, _ := regexp.Compile(`duration=(\d+.\d+)`)
+	foo := r.FindStringSubmatch(string(out))
+	duration := 0.0
+	if len(foo) > 1 {
+		duration, _ = strconv.ParseFloat(foo[1], 64)
+	}
+	pixelsPerSecond := 1.0
+	if duration > 0 {
+		pixelsPerSecond = math.Floor(800 / duration)
+		if pixelsPerSecond == 0 {
+			pixelsPerSecond = 1
+		}
+	}
+	fmt.Println("audiowaveform", "-i", fname, "--output-filename", fname+".json", "--pixels-per-second", fmt.Sprint(pixelsPerSecond), "--bits", "16")
+	out, err = exec.Command("audiowaveform", "-i", fname, "--output-filename", fname+".json", "--pixels-per-second", fmt.Sprint(pixelsPerSecond), "--bits", "16").CombinedOutput()
+	if err != nil {
+		log.Error("audiowaveform error", err)
+		log.Errorf("%s", out)
+	}
 	return
 }
 
