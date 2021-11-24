@@ -13,10 +13,13 @@
         }
 
     .preview {
-        margin-top: 2em;
+        margin-top: 0.5em;
     }
     th, td {
         border-bottom: 0px;
+    }
+    .fr {
+        float: right;
     }
 </style>
 </head>
@@ -63,11 +66,27 @@
             </form>
             <h5>uploads</h5>
             <div v-for="upload in uploads" class="preview">
-                <pre>{{upload}}</pre>
-                <audio controls>
-                    <source v-bind:src="upload" type="audio/ogg">
-                    Your browser does not support the audio tag.
-                </audio>
+                <div class="row">
+                    <div class="nine columns">
+                        <strong><a v-bind:href="'/'+upload.File">{{upload.File}}</a></strong>
+                    </div>
+                    <div class="three columns fr">
+                        <strong>@ {{upload.Band}}</strong>
+                    </div>
+                </div>
+                <div class="row">
+                    <small>
+                        <div class="twelve columns">
+                            ({{upload.OriginalFile}}<span v-if=upload.Artist> from '{{upload.Artist}}'</span> <span v-if=upload.Date> from '{{upload.Date}}'</span> )
+                        </div>
+                    </small>
+                </div>
+                <div class="row">
+                    <audio controls>
+                        <source v-bind:src="upload.File" type="audio/ogg">
+                        Your browser does not support the audio tag.
+                    </audio>
+                </div>
             </div>
         </div>
     </div>
@@ -143,9 +162,9 @@
             uploads: []
         },
         created() {
-            fetch("/uploads")
+            fetch("/uploads2")
                 .then(response => response.json())
-                .then(data => (this.uploads = data.uploads));
+                .then(data => (this.uploads = data));
             fetch("/radio_stations.json")
                 .then(response => response.json())
                 .then(data => (this.radio_stations = data));

@@ -28,8 +28,21 @@ const ContentDirectory = "uploads"
 
 var indexHTML []byte
 
+type MetadataInfo struct {
+	File         string
+	OriginalFile string
+	Band         string
+	Artist       string
+	OtherInfo    string
+	BPM          string
+	Date         string
+}
+
+var metadataSaved map[string]MetadataInfo
+
 func main() {
 	port := 8730
+	metadataSaved = make(map[string]MetadataInfo)
 	os.MkdirAll(ContentDirectory, 0644)
 	log.SetLevel("debug")
 	log.Infof("listening on :%d", port)
@@ -65,6 +78,9 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 	} else if r.URL.Path == "/uploads" {
 		// return a list of files
 		return handleListUploads(w, r)
+	} else if r.URL.Path == "/uploads2" {
+		// return a list of files
+		return handleListUploadsWithMetadata(w, r)
 	} else if strings.HasSuffix(r.URL.Path, "ogg") {
 		return handleServeFile(w, r)
 	} else if strings.HasSuffix(r.URL.Path, "ogg.json") {
@@ -306,7 +322,6 @@ func getFileContents(fname string) (s string, err error) {
 }
 
 func handleListUploads(w http.ResponseWriter, r *http.Request) (err error) {
-
 	fileList, err := filepath.Glob("uploads/*.ogg")
 	// strip prefix
 	for i, f := range fileList {
@@ -315,6 +330,80 @@ func handleListUploads(w http.ResponseWriter, r *http.Request) (err error) {
 	if err == nil {
 		jsonResponse(w, http.StatusOK, map[string][]string{"uploads": fileList})
 	}
+	return
+}
+
+func handleListUploadsWithMetadata(w http.ResponseWriter, r *http.Request) (err error) {
+	fileList, err := filepath.Glob("uploads/*.ogg")
+	// strip prefix
+	var uploads []MetadataInfo
+	for i, f := range fileList {
+		var fileHash string
+		fileList[i] = filepath.Base(f)
+		fileHash, err = Filemd5Sum(f)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		if _, ok := metadataSaved[fileHash]; !ok {
+			// collect metadata
+			m, errM := collectMetaData(f)
+			if errM == nil {
+				metadataSaved[fileHash] = m
+			}
+		}
+		if _, ok := metadataSaved[fileHash]; ok {
+			uploads = append(uploads, metadataSaved[fileHash])
+		}
+	}
+	if err == nil {
+		jsonResponse(w, http.StatusOK, uploads)
+	}
+	return
+}
+
+func collectMetaData(fname string) (m MetadataInfo, err error) {
+	m.File = filepath.Base(fname)
+
+	out, err := exec.Command("ffprobe", "-i", fname, "-show_streams", "-v", "quiet").CombinedOutput()
+	if err != nil {
+		log.Error("ffprobe error", err)
+		log.Errorf("%s", out)
+		return
+	}
+	var r *regexp.Regexp
+	var foo []string
+	r, _ = regexp.Compile(`TAG:metafile='(.+)'`)
+	foo = r.FindStringSubmatch(string(out))
+	if len(foo) > 1 {
+		m.OriginalFile = foo[1]
+	}
+	r, _ = regexp.Compile(`TAG:metaband='(.+)'`)
+	foo = r.FindStringSubmatch(string(out))
+	if len(foo) > 1 {
+		m.Band = foo[1]
+	}
+	r, _ = regexp.Compile(`TAG:metaartist='(.+)'`)
+	foo = r.FindStringSubmatch(string(out))
+	if len(foo) > 1 {
+		m.Artist = foo[1]
+	}
+	r, _ = regexp.Compile(`TAG:metabpm='(.+)'`)
+	foo = r.FindStringSubmatch(string(out))
+	if len(foo) > 1 {
+		m.BPM = foo[1]
+	}
+	r, _ = regexp.Compile(`TAG:metaotherinfo='(.+)'`)
+	foo = r.FindStringSubmatch(string(out))
+	if len(foo) > 1 {
+		m.OtherInfo = foo[1]
+	}
+	r, _ = regexp.Compile(`TAG:metadate='(.+)'`)
+	foo = r.FindStringSubmatch(string(out))
+	if len(foo) > 1 {
+		m.Date = foo[1]
+	}
+
 	return
 }
 
@@ -401,7 +490,6 @@ func saveFile(tempfname string, metadata map[string]string) (fname2 string, err 
 }
 
 func ToWaveform(fname string) (err error) {
-	fmt.Println("ffprobe", "-i", fname, "-show_streams", "-v", "quiet")
 	out, err := exec.Command("ffprobe", "-i", fname, "-show_streams", "-v", "quiet").CombinedOutput()
 	if err != nil {
 		log.Error("ffprobe error", err)
@@ -453,6 +541,7 @@ func ToOgg(fname string, metadata map[string]string) (fname2 string, err error) 
 	if len(foo) > 0 {
 		metadata["metabpm"] = foo[0]
 	}
+	metadata["metadate"] = time.Now().Format(time.RFC3339)
 
 	fname2 = strings.TrimSuffix(fname, filepath.Ext(fname)) + ".ogg"
 	cmd := []string{"-y", "-i", fname, "-ar", "48000"}
