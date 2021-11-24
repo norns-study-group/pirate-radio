@@ -45,7 +45,7 @@ function Marquee:set_playing_info(i,filename)
   if radio_stations[i].name==nil then 
     do return end 
   end
-  self.station_text[i]=radio_stations[i].name
+  self.station_text[i]=radio_stations[i].name.."'"..radio_stations[i].description.."'"
   local metadata=fn.audio_metadata(filename)
   if metadata~=nil then 
     if metadata.metafile~=nil then

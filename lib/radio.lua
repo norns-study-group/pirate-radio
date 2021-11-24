@@ -98,9 +98,8 @@ function radio.create_playlists_from_sync(data)
     if data.playlists==nil then 
         do return end 
     end
-    if #data.playlists<2 then 
-        do return end 
-    end
+    radio.clear_stations()
+    
     for i,v in ipairs(data.playlists) do
         if util.file_exists(v.fname) then
             radio.add_file_to_station(v.station,v.fname)
