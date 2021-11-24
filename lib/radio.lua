@@ -111,7 +111,7 @@ function radio.create_playlists_from_sync(data)
     -- use the engine state to play a song from a current spot
     for _,v in ipairs(data.engine_state) do
       print("syncing station",v.station,v.playlist,v.file,v.pos)
-      engine.syncStation(math.floor(tonumber(v.station)),math.floor(tonumber(v.playlist)),fname,tonumber(v.pos))
+      engine.syncStation(math.floor(tonumber(v.station)),math.floor(tonumber(v.playlist)),v.file,tonumber(v.pos))
     end
 
     radio.pirate_radio_enabled=true
