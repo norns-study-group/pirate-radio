@@ -412,9 +412,9 @@ PradStreamPlayer {
 					mp3s[swap].finish;
 				});
 				mp3s[swap]=MP3(fname.absolutePath,\readfile,\ogg);
-				bufs[swap]=Buffer.cueSoundFile(server,mp3s[swap].fifo,startFrame:startSeconds*numFrames, numChannels:numChannels);
+				bufs[swap]=Buffer.cueSoundFile(server,mp3s[swap].fifo,startFrame:startSeconds*server.sampleRate, numChannels:numChannels);
 			},{
-				bufs[swap]=Buffer.cueSoundFile(server,fname.absolutePath,startFrame:startSeconds*numFrames, numChannels:numChannels);
+				bufs[swap]=Buffer.cueSoundFile(server,fname.absolutePath,startFrame:startSeconds*server.sampleRate, numChannels:numChannels);
 			});
 
 			// replace our current synth with the new one (preserves order)
