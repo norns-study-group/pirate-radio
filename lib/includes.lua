@@ -29,6 +29,7 @@ _16n = include "pirate-radio/lib/16n"
 AbstractComponent = include "pirate-radio/lib/ui/AbstractComponent"
 Slider = include "pirate-radio/lib/ui/Slider"
 SliderGroup = include "pirate-radio/lib/ui/SliderGroup"
+Marquee = include "pirate-radio/lib/ui/Marquee"
 
 -- weather!
 weather = include "pirate-radio/lib/weather"
@@ -39,9 +40,22 @@ sync = include "pirate-radio/lib/sync"
 -- osc processing
 oscin=include "pirate-radio/lib/oscin"
 
+-- synchronization
+dust2dust_= include "pirate-radio/lib/dust2dust"
+
 -- radio engine
 radio = include "pirate-radio/lib/radio"
 
 -- pre-req installation
 prereqs = include "pirate-radio/lib/prereqs"
 
+-- for json
+
+-- load json library
+if not string.find(package.cpath,"/home/we/dust/code/pirate-radio/lib/") then
+  package.cpath=package.cpath..";/home/we/dust/code/pirate-radio/lib/?.so"
+end
+json=require("cjson")
+
+-- load the radio station list
+radio_stations=fn.load_json(_path.code.."pirate-radio/lib/radio_stations.json")

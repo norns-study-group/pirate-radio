@@ -15,7 +15,7 @@ MP3 {
 			;
 
 	var // These are filled by newCopyArgs:
-		<path, <mode, <format,
+		<path, <mode, <format, <startTime,
 		// These are other vars:
 		<fifo, <lameproc, <pid, playing=false,
 		// Set sampleRate to match the server you're using the MP3 with (defaults to default server's sample rate)
@@ -54,8 +54,8 @@ MP3 {
 		});
 	}
 
-	*new { |path, mode=\readfile, format=\mp3|
-		^super.newCopyArgs(path, mode, format).init;
+	*new { |path, mode=\readfile, format=\mp3, startTime=0|
+		^super.newCopyArgs(path, mode, format,startTime).init;
 	}
 
 	init {
@@ -106,7 +106,8 @@ MP3 {
 			format.switch(
 			\ogg, {
 				cmd = oggdecpath + "--quiet " + lameopts + "\"" ++ path ++ "\" --output" + fifo + "> /dev/null";
-				cmd = "/home/we/dust/code/pirate-radio/supercollider/classes/runogg.sh"+path+fifo;
+				cmd = "/home/we/dust/code/pirate-radio/supercollider/classes/runogg.sh"+path+fifo+startTime;
+				// cmd = "/home/zns/go/src/github.com/schollz/pirate-radio/supercollider/classes/runogg.sh"+path+fifo+startTime;
 				cmdname = "oggdec";
 			},
 			{ // Default is MP3
@@ -126,7 +127,7 @@ MP3 {
 //			("MP3.start completed (PID"+(pid?"unknown")++")").postln;
 //			playing = true;
 //		});
-		cmd.postln;
+		//cmd.postln;
 
 		// this is a synchronous process
 		cmd.systemCmd;

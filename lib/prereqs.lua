@@ -2,7 +2,7 @@ local prereqs = {}
 
 function prereqs.install()
     local toinstall=""
-    local s=util.os_capture("which oggdec")
+    local s=util.os_capture("which ogg123")
     print(s)
     if s=="" then 
         print("installing vorbis-tools...")

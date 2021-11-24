@@ -56,19 +56,30 @@ Engine_PirateRadio : CroneEngine {
 			});
 		});
 
-		this.addCommand(\setNextFile, "is", {
-			arg msg;
-			if (radio.notNil,{
-				radio.setNextFile(msg[1],msg[2]);
-			});
-		});
-
 		this.addCommand(\fxParam, "sf", {
 			arg msg;
 			if (radio.notNil,{
 				radio.setFxParam(msg[1].asSymbol, msg[2]);
 			});
 		});
+
+		this.addCommand(\getEngineState, "", {
+			arg msg;
+			if (radio.notNil,{
+				radio.getEngineState();
+			});
+		});
+		
+		// i, playlistPosition, currentFilename, currentTime
+		this.addCommand(\syncStation, "iisf", {
+			arg msg;
+			if (radio.notNil,{
+				radio.syncStation(msg[1],msg[2],msg[3].asString,msg[4]);
+			});
+		});
+
+
+
 
 		//... other commands...
 
