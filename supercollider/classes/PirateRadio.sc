@@ -372,6 +372,9 @@ PradStreamPlayer {
 		("station "++id++" playing file "++fname.asAbsolutePath).postln;
 		fnames[swap]=(fname.asAbsolutePath).asString;
 
+		// send update to server that a song is playing
+		NetAddr("127.0.0.1", 10111).sendMsg("playing",id,fnames[swap]);
+
 		// get sound file duration
 		p = Pipe.new("ffprobe -i '"++fname.asAbsolutePath++"' -show_format -v quiet | sed -n 's/duration=//p'", "r"); 
 		l = p.getLine;                    // get the first line

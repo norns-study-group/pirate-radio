@@ -124,7 +124,7 @@ end
 -------------------------------------------
 -- global variables
 -------------------------------------------
-SCREEN_FRAMERATE = 1/15
+SCREEN_FRAMERATE = 1/7
 SCREEN_SIZE = {x=127,y=64}
 NUM_PAGES = 5
 

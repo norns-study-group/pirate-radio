@@ -6,6 +6,8 @@ page_scroll = function (delta)
 end
 
 local draw_main_nav = function()
+  -- draw marquee next to navigation
+  marquee:draw(pages.num_pages*9,SCREEN_SIZE.y-9,128-pages.num_pages*9)
   -- navigation marks
   screen.level(15)
   for i=1,pages.num_pages,1 do
@@ -16,7 +18,6 @@ local draw_main_nav = function()
     screen.move(x+2,y)
     screen.circle(x,y,3)
     screen.stroke()
-    
   end
 end
 

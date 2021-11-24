@@ -48,6 +48,9 @@ function init()
 
   params:bang()
 
+  -- define the global marquee for the lower right banner
+  marquee=Marquee:new()
+
   initializing = false
 end
 
@@ -109,7 +112,7 @@ local menu_activated = false
 function redraw_timer_init()
   redrawtimer=metro.init(function()
     local menu_status=norns.menu.status()
-    if menu_status==false and initializing==false and screen_dirty==true then
+    if menu_status==false and initializing==false then
       pirate_radio_pages.update_pages()
       screen_dirty=false
     elseif menu_status==false and initializing==false and menu_activated == true then

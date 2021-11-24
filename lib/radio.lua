@@ -106,7 +106,6 @@ function radio.create_playlists_from_sync(data)
             radio.add_file_to_station(v.station,v.fname)
         end
     end
-    engine.refresh()
 
     -- use the engine state to play a song from a current spot
     for _,v in ipairs(data.engine_state) do
