@@ -12,7 +12,7 @@ function tuner.init()
     tc = tuner.components
   end
 
-  tuner.build_ui()  
+  tuner.build_ui()
 end
 
 function tuner.build_ui()
@@ -53,10 +53,10 @@ function tuner.build_ui()
       tuner.dialer.pointer_min,
       tuner.dialer.pointer_max,
       loc)
-      
+
     tuner.dialer:set_pointer_loc(loc, from_param)
   end
-  
+
   table.insert(tuner.components,tuner.dialer)
 end
 
@@ -77,8 +77,12 @@ function tuner:redraw()
   screen.font_size(24)
   screen.text_right(string.format("%2.1f",params:get("tuner")))
   screen.font_size(8)
-  if current_station_image~=nil and current_station_image~="" then 
-    if util.file_exists(current_station_image) then 
+  if current_station_image_list_len~=nil then
+    -- animation
+    screen.display_png(current_station_image_dir..current_station_image_list[frame_counter%current_station_image_list_len+1],4,22)
+  elseif current_station_image~=nil and current_station_image~="" then
+    -- still image
+    if util.file_exists(current_station_image) then
       screen.display_png(current_station_image,4,22)
     end
   end

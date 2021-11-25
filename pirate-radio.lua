@@ -121,13 +121,14 @@ function redraw_timer_init()
     elseif menu_status==true and menu_activated == false then
       menu_activated = true
     end
+    frame_counter = frame_counter+1
   end,SCREEN_FRAMERATE,-1)
   redrawtimer:start()
 end
 
 
 --------------------------
--- debouncer 
+-- debouncer
 -- (and things that run async, like internet stuff,
 -- that may fail if there is no connection)
 --------------------------
@@ -152,4 +153,3 @@ function cleanup ()
   norns.system_cmd(_path.code.."pirate-radio/supercollider/classes/stopogg.sh &")
   -- add more cleanup code
 end
-
