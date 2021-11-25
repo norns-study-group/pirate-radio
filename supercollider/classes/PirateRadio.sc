@@ -136,7 +136,7 @@ PirateRadio {
 		selector = PradStreamSelector.new(server, streamBusses, strengthBusses, noiseBus, outputBus);
 
 		// "adding effects".postln;
-		// effects = PradEffects.new(server, outputBus);
+		effects = PradEffects.new(server, outputBus);
 
 		// "adding saturator".postln;
 		// saturator = PradStereoBitSaturator.new(server, server, outputBus);
@@ -610,7 +610,7 @@ PradEffects {
 		synth = {
 			// ... whatever args
 			arg bus, chorusRate=0.2, preGain=1.0,
-			band1,band2,band3,band4,band5,band6,band7,band8,band9,band10;
+			band1=0,band2=0,band3=0,band4=0,band5=0,band6=0,band7=0,band8=0,band9=0,band10=0;
 
 			var snd;
 			snd = In.ar(bus, 2);
@@ -628,20 +628,22 @@ PradEffects {
 			snd = BPeakEQ.ar(snd,16000,db:band10);
 
 			////////////////
-			snd = DelayC.ar(snd, delaytime:LFNoise2.kr(chorusRate).linlin(-1,1, 0.01, 0.06));
-			snd = Greyhole.ar(snd);
-			snd = (snd*preGain).distort.distort;
+			// snd = DelayC.ar(snd, delaytime:LFNoise2.kr(chorusRate).linlin(-1,1, 0.01, 0.06));
+			// snd = Greyhole.ar(snd);
+			// snd = (snd*preGain).distort.distort;
 			//... or whatever
 			///////////
 
 			// `ReplaceOut` overwrites the bus contents (unlike `Out` which mixes)
 			// so this is how to do an "insert" processor
 			ReplaceOut.ar(bus, snd);
-
 		}.play(target:server, args:[\bus, bus.index], addAction:\addToTail);
 	}
 
-
+	setParam {
+		arg key, value;
+		synth.set(key, value);
+	}
 
 	free {
 		synth.free;
