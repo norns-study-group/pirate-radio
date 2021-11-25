@@ -29,7 +29,7 @@ local update_pages = function()
     elseif pages.index == 2 then
       eq:redraw()      
     elseif pages.index == 3 then
-      
+      visualizer:redraw()
     elseif pages.index == 4 then
       
     elseif pages.index == 5 then

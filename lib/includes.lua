@@ -24,6 +24,7 @@ parameters = include "pirate-radio/lib/parameters"
 tuner = include "pirate-radio/lib/tuner"
 eq = include "pirate-radio/lib/eq"
 _16n = include "pirate-radio/lib/16n"
+visualizer = include "pirate-radio/lib/visualizer"
 
 -- components
 AbstractComponent = include "pirate-radio/lib/ui/AbstractComponent"

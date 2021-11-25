@@ -147,10 +147,10 @@ PirateRadio {
 			snd = In.ar(in, 2);
 			snd = Limiter.ar(snd, threshold, lookahead).clip(-1, 1);
 			fft = FFT(LocalBuf(1024),snd[0]);
-		    array = FFTSubbandPower.kr(fft, [60, 170, 310, 600, 1000, 3000, 6000, 12000,14000],scalemode:2);
+		    array = FFTSubbandPower.kr(fft, [30, 60, 110, 170, 310, 600, 1000, 3000, 6000],scalemode:2);
 			(0..9).do({
 				arg i;
-				SendTrig.kr(Impulse.kr(4),100+i,Clip.kr(LinLin.kr(Lag.kr(array[i],0.5),0,500,0,1)));
+				SendTrig.kr(Impulse.kr(Rand(1.0,1.5)),100+i,Lag.kr(Clip.kr(LinLin.kr(array[i].ampdb,-96,96,0,1)),2));
 			});
 			Out.ar(0, snd);
 		}.play(target:server, args:[\in, outputBus.index], addAction:\addToTail);
@@ -327,7 +327,7 @@ PradStreamPlayer {
 		inDialBus=inDialBusArg;
 		filePaths=List();
 		swap = 0;
-		crossfade=1;
+		crossfade=10;
 		fileIndexCurrent=(-1);
 		fileCurrentPos=0;
 		fileScheduler=0;
@@ -358,9 +358,11 @@ PradStreamPlayer {
 				if (filePaths[fileIndexCurrent]==nil,{
 					fileIndexCurrent=0;
 				});
+				("station "+id+" queing next file "+(fileIndexCurrent+1)+" of "+filePaths.size).postln;
 				nextFile=filePaths[fileIndexCurrent];
 			});
 		},{
+			("using special file "+fileSpecial).postln;
 			nextFile=fileSpecial;
 			fileSpecial=nil;
 		});
@@ -502,11 +504,15 @@ PradStreamPlayer {
 	addFile {
 		arg fname;
 		if (fname.notNil,{
+			("station"+id+"adding file"+fname).postln;
 			filePaths=filePaths.add(fname);
+		},{
+			"addFile: filename is nil!".postln;
 		});
 	}
 
 	clearFiles {
+		("station"+id+"clearing files").postln;
 		filePaths=List();
 	}
 
@@ -664,7 +670,7 @@ PradStreamSelector {
 
 			// noise is attenuated by inverse of total strength
 			totalstrength=Clip.kr(Mix.new(strengths.collect({arg s; s})));
-			SendTrig.kr(Impulse.kr(10),1,totalstrength);
+			SendTrig.kr(Impulse.kr(6),1,Lag.kr(totalstrength,0.5));
 
 			// lose frames based on the strength
 			mix=WaveLoss.ar(mix,LinLin.kr(totalstrength,0,1,90,0),100,2);
