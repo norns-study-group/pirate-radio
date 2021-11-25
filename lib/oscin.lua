@@ -11,6 +11,10 @@ oscin.strength=0
 oscin.have_info=false
 oscin.info={}
 oscin.playing={}
+oscin.eq={}
+for i=1,10 do
+  oscin.eq[i]=0
+end
 
 function oscin.get_signal_strength()
   return oscin.strength
@@ -41,9 +45,11 @@ function oscin.init()
     if path=="strength" then
       oscin.strength=tonumber(args[1])
     elseif path=="playing" then
-      if marquee~=nil then 
+      if marquee~=nil then
         marquee:set_playing_info(tonumber(args[1])+1,args[2])
       end
+    elseif path=="eq" then
+      oscin.eq[tonumber(args[1])]=tonumber(args[2])
     elseif path=="enginestate" then
       oscin.info={}
       local key=""
