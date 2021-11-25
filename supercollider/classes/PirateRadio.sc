@@ -147,14 +147,15 @@ PirateRadio {
 		spectrumSendFreq=0;
 		outputSynth = {
 			arg in, out=0, threshold=0.99, lookahead=0.2, sendFreq=0;
-			var snd, fft, array;
+			var snd, fft, array, arraySendFreq;
 			snd = In.ar(in, 2);
 			snd = Limiter.ar(snd, threshold, lookahead).clip(-1, 1);
 			fft = FFT(LocalBuf(1024),snd[0]);
 		    array = FFTSubbandPower.kr(fft, [30, 60, 110, 170, 310, 600, 1000, 3000, 6000],scalemode:2);
+		    arraySendFreq=Impulse.kr(sendFreq);
 			(0..9).do({
 				arg i;
-				SendTrig.kr(Impulse.kr(sendFreq),100+i,Lag.kr(Clip.kr(LinLin.kr(array[i].ampdb,-96,96,0,1)),2));
+				SendTrig.kr(arraySendFreq,100+i,Lag.kr(Clip.kr(LinLin.kr(array[i].ampdb,-96,96,0,1)),2));
 			});
 			Out.ar(0, snd);
 		}.play(target:server, args:[\in, outputBus.index,\sendFreq, spectrumSendFreq], addAction:\addToTail);
