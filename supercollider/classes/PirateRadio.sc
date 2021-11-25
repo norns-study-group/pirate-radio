@@ -77,6 +77,9 @@ PirateRadio {
 		    if (msg[2]==1,{
 			    NetAddr("127.0.0.1", 10111).sendMsg("strength",msg[3]);
 		    });
+		    if (msg[2]>99,{
+			    NetAddr("127.0.0.1", 10111).sendMsg("eq",msg[2]-99,msg[3]);
+		    });
 		},'/tr', server.addr);
 
 		//--------------------
@@ -140,25 +143,31 @@ PirateRadio {
 		"creating output synth".postln;
 		outputSynth = {
 			arg in, out=0, threshold=0.99, lookahead=0.2;
-			var snd;
+			var snd, fft, array;
 			snd = In.ar(in, 2);
 			snd = Limiter.ar(snd, threshold, lookahead).clip(-1, 1);
+			fft = FFT(LocalBuf(1024),snd[0]);
+		    array = FFTSubbandPower.kr(fft, [60, 170, 310, 600, 1000, 3000, 6000, 12000,14000],scalemode:2);
+			(0..9).do({
+				arg i;
+				SendTrig.kr(Impulse.kr(4),100+i,Clip.kr(LinLin.kr(Lag.kr(array[i],0.5),0,500,0,1)));
+			});
 			Out.ar(0, snd);
 		}.play(target:server, args:[\in, outputBus.index], addAction:\addToTail);
 
 		// send periodic information to norns
-		Routine{
-			inf.do{
-				5.sleep;
-				(0..numStreams-1).do({arg i;
-				    NetAddr("127.0.0.1", 10111).sendMsg("info",
-				    	"station",i,
-				    	"file",streamPlayers[i].fnames[streamPlayers[i].swap],
-				    	"pos",Main.elapsedTime - streamPlayers[i].fileCurrentPos,
-				    );
-				});
-			}
-		}.play;
+		// Routine{
+		// 	inf.do{
+		// 		5.sleep;
+		// 		(0..numStreams-1).do({arg i;
+		// 		    NetAddr("127.0.0.1", 10111).sendMsg("info",
+		// 		    	"station",i,
+		// 		    	"file",streamPlayers[i].fnames[streamPlayers[i].swap],
+		// 		    	"pos",Main.elapsedTime - streamPlayers[i].fileCurrentPos,
+		// 		    );
+		// 		});
+		// 	}
+		// }.play;
 	}
 
 	// set file location
