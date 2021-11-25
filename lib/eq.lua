@@ -77,7 +77,7 @@ function eq:build_ui()
   self.num_bands = self.bands:get_num_sliders()
   for i, _ in ipairs(self.bands.sliders) do
     eq.bands.sliders[i].pointer_loc_callback=function(a) 
-      local val=util.linlin(13,33,12,-12,a)
+      local val=util.linlin(13,33,18,-18,a)
       engine.fxParam("band"..i,val)
     end
   end
