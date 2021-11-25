@@ -49,6 +49,13 @@ Engine_PirateRadio : CroneEngine {
 			});
 		});
 
+		this.addCommand(\setSpectrumSendFreq, "f", {
+			arg msg;
+			if (radio.notNil,{
+				radio.setSpectrumSendFreq(msg[1]);
+			});
+		});
+
 		this.addCommand(\clearFiles, "i", {
 			arg msg;
 			if (radio.notNil,{

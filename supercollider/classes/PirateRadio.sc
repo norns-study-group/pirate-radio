@@ -15,6 +15,9 @@ PirateRadio {
 	//----- instance variables
 	//----- created for each new `PirateRadio` object
 
+	//--- toggles
+	var <spectrumSendFreq;
+
 	//--- busses
 	// array of busses for streams
 	var <streamBusses;
@@ -141,8 +144,9 @@ PirateRadio {
 		// TODO: add 10-band equalizer at the end?
 
 		"creating output synth".postln;
+		spectrumSendFreq=0;
 		outputSynth = {
-			arg in, out=0, threshold=0.99, lookahead=0.2;
+			arg in, out=0, threshold=0.99, lookahead=0.2, sendFreq=0;
 			var snd, fft, array;
 			snd = In.ar(in, 2);
 			snd = Limiter.ar(snd, threshold, lookahead).clip(-1, 1);
@@ -150,10 +154,10 @@ PirateRadio {
 		    array = FFTSubbandPower.kr(fft, [30, 60, 110, 170, 310, 600, 1000, 3000, 6000],scalemode:2);
 			(0..9).do({
 				arg i;
-				SendTrig.kr(Impulse.kr(Rand(1.0,1.5)),100+i,Lag.kr(Clip.kr(LinLin.kr(array[i].ampdb,-96,96,0,1)),2));
+				SendTrig.kr(Impulse.kr(sendFreq),100+i,Lag.kr(Clip.kr(LinLin.kr(array[i].ampdb,-96,96,0,1)),2));
 			});
 			Out.ar(0, snd);
-		}.play(target:server, args:[\in, outputBus.index], addAction:\addToTail);
+		}.play(target:server, args:[\in, outputBus.index,\sendFreq, spectrumSendFreq], addAction:\addToTail);
 
 		// send periodic information to norns
 		// Routine{
@@ -205,6 +209,14 @@ PirateRadio {
 	setDial {
 		arg value;
 		dial.setDial(value);
+	}
+
+	// set the dial position
+	setSpectrumSendFreq {
+		arg value;
+		("setting output send freq to"+value).postln;
+		spectrumSendFreq=value;
+		outputSynth.set(\sendFreq,spectrumSendFreq)
 	}
 
 	// setBand will set the band and bandwidth of station i
@@ -327,7 +339,7 @@ PradStreamPlayer {
 		inDialBus=inDialBusArg;
 		filePaths=List();
 		swap = 0;
-		crossfade=10;
+		crossfade=20;
 		fileIndexCurrent=(-1);
 		fileCurrentPos=0;
 		fileScheduler=0;

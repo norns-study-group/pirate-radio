@@ -3,6 +3,12 @@
 
 page_scroll = function (delta)
   pages:set_index_delta(util.clamp(delta, -1, 1), false)
+  if pages.index==3 then 
+    -- turn on spectrum analyzer (network intensive)
+    engine.setSpectrumSendFreq(1/SCREEN_FRAMERATE)
+  else
+    engine.setSpectrumSendFreq(0)
+  end
 end
 
 local draw_main_nav = function()
