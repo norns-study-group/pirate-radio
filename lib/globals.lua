@@ -70,7 +70,7 @@ function fn.audio_metadata(fname)
   -- TAG:metafile='DNITA_vocal_phrase_all_the_time_dry_80_Ab_bpm80.wav'
   -- TAG:metabpm='112.96'
   if fn.audio_metadata_cache[fname]~=nil then 
-    return fn.audio_metadata_cache 
+    return fn.audio_metadata_cache[fname] 
   end
   local metadata={}
   local tempfile="/tmp/tmp"..math.random()
