@@ -15,6 +15,9 @@ PirateRadio {
 	//----- instance variables
 	//----- created for each new `PirateRadio` object
 
+	//--- toggles
+	var <spectrumSendFreq;
+
 	//--- busses
 	// array of busses for streams
 	var <streamBusses;
@@ -133,7 +136,7 @@ PirateRadio {
 		selector = PradStreamSelector.new(server, streamBusses, strengthBusses, noiseBus, outputBus);
 
 		// "adding effects".postln;
-		// effects = PradEffects.new(server, outputBus);
+		effects = PradEffects.new(server, outputBus);
 
 		// "adding saturator".postln;
 		// saturator = PradStereoBitSaturator.new(server, server, outputBus);
@@ -141,19 +144,20 @@ PirateRadio {
 		// TODO: add 10-band equalizer at the end?
 
 		"creating output synth".postln;
+		spectrumSendFreq=0;
 		outputSynth = {
-			arg in, out=0, threshold=0.99, lookahead=0.2;
+			arg in, out=0, threshold=0.99, lookahead=0.2, sendFreq=0;
 			var snd, fft, array;
 			snd = In.ar(in, 2);
 			snd = Limiter.ar(snd, threshold, lookahead).clip(-1, 1);
 			fft = FFT(LocalBuf(1024),snd[0]);
-		    array = FFTSubbandPower.kr(fft, [60, 170, 310, 600, 1000, 3000, 6000, 12000,14000],scalemode:2);
+		    array = FFTSubbandPower.kr(fft, [30, 60, 110, 170, 310, 600, 1000, 3000, 6000],scalemode:2);
 			(0..9).do({
 				arg i;
-				SendTrig.kr(Impulse.kr(4),100+i,Clip.kr(LinLin.kr(Lag.kr(array[i],0.5),0,500,0,1)));
+				SendTrig.kr(Impulse.kr(sendFreq),100+i,Lag.kr(Clip.kr(LinLin.kr(array[i].ampdb,-96,96,0,1)),2));
 			});
 			Out.ar(0, snd);
-		}.play(target:server, args:[\in, outputBus.index], addAction:\addToTail);
+		}.play(target:server, args:[\in, outputBus.index,\sendFreq, spectrumSendFreq], addAction:\addToTail);
 
 		// send periodic information to norns
 		// Routine{
@@ -205,6 +209,14 @@ PirateRadio {
 	setDial {
 		arg value;
 		dial.setDial(value);
+	}
+
+	// set the dial position
+	setSpectrumSendFreq {
+		arg value;
+		("setting output send freq to"+value).postln;
+		spectrumSendFreq=value;
+		outputSynth.set(\sendFreq,spectrumSendFreq)
 	}
 
 	// setBand will set the band and bandwidth of station i
@@ -327,7 +339,7 @@ PradStreamPlayer {
 		inDialBus=inDialBusArg;
 		filePaths=List();
 		swap = 0;
-		crossfade=1;
+		crossfade=20;
 		fileIndexCurrent=(-1);
 		fileCurrentPos=0;
 		fileScheduler=0;
@@ -358,9 +370,11 @@ PradStreamPlayer {
 				if (filePaths[fileIndexCurrent]==nil,{
 					fileIndexCurrent=0;
 				});
+				("station "+id+" queing next file "+(fileIndexCurrent+1)+" of "+filePaths.size).postln;
 				nextFile=filePaths[fileIndexCurrent];
 			});
 		},{
+			("using special file "+fileSpecial).postln;
 			nextFile=fileSpecial;
 			fileSpecial=nil;
 		});
@@ -502,11 +516,15 @@ PradStreamPlayer {
 	addFile {
 		arg fname;
 		if (fname.notNil,{
+			("station"+id+"adding file"+fname).postln;
 			filePaths=filePaths.add(fname);
+		},{
+			"addFile: filename is nil!".postln;
 		});
 	}
 
 	clearFiles {
+		("station"+id+"clearing files").postln;
 		filePaths=List();
 	}
 
@@ -592,7 +610,7 @@ PradEffects {
 		synth = {
 			// ... whatever args
 			arg bus, chorusRate=0.2, preGain=1.0,
-			band1,band2,band3,band4,band5,band6,band7,band8,band9,band10;
+			band1=0,band2=0,band3=0,band4=0,band5=0,band6=0,band7=0,band8=0,band9=0,band10=0;
 
 			var snd;
 			snd = In.ar(bus, 2);
@@ -610,20 +628,22 @@ PradEffects {
 			snd = BPeakEQ.ar(snd,16000,db:band10);
 
 			////////////////
-			snd = DelayC.ar(snd, delaytime:LFNoise2.kr(chorusRate).linlin(-1,1, 0.01, 0.06));
-			snd = Greyhole.ar(snd);
-			snd = (snd*preGain).distort.distort;
+			// snd = DelayC.ar(snd, delaytime:LFNoise2.kr(chorusRate).linlin(-1,1, 0.01, 0.06));
+			// snd = Greyhole.ar(snd);
+			// snd = (snd*preGain).distort.distort;
 			//... or whatever
 			///////////
 
 			// `ReplaceOut` overwrites the bus contents (unlike `Out` which mixes)
 			// so this is how to do an "insert" processor
 			ReplaceOut.ar(bus, snd);
-
 		}.play(target:server, args:[\bus, bus.index], addAction:\addToTail);
 	}
 
-
+	setParam {
+		arg key, value;
+		synth.set(key, value);
+	}
 
 	free {
 		synth.free;
@@ -664,7 +684,7 @@ PradStreamSelector {
 
 			// noise is attenuated by inverse of total strength
 			totalstrength=Clip.kr(Mix.new(strengths.collect({arg s; s})));
-			SendTrig.kr(Impulse.kr(10),1,totalstrength);
+			SendTrig.kr(Impulse.kr(6),1,Lag.kr(totalstrength,0.5));
 
 			// lose frames based on the strength
 			mix=WaveLoss.ar(mix,LinLin.kr(totalstrength,0,1,90,0),100,2);

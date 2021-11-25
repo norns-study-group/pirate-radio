@@ -22,11 +22,11 @@ function radio.init()
         end
 	print("received data from dust2dust: "..json.encode(data))
         if data.message=="give-sync" and radio.synced~=true then 
-	    print("radio.init: give-sync")
-	    print(json.encode(data))
+            print("radio.init: give-sync")
+            print(json.encode(data))
             radio.synced=radio.create_playlists_from_sync(data)
         elseif data.message=="need-sync" and radio.pirate_radio_enabled then 
-	    print("radio.init: need-sync")
+            print("radio.init: need-sync")
             -- send out this stations syncing
             oscin.get_engine_state(function(engine_state)
                 local send_data={message="give-sync"}
@@ -60,8 +60,8 @@ function radio.create_weather_station()
 end
 
 function radio.add_file_to_station(station,fname)
+    print("adding to station "..station.." ("..radio_stations[station].band.."): "..fname)
     table.insert(radio.playlists,{fname=fname,station=station})
-    print("adding "..fname.." to station "..station.." ("..radio_stations[station].band..")")
     engine.addFile(station-1,fname) --is 0-indexed
 end
 
@@ -95,7 +95,9 @@ function radio.create_playlist_from_tapes()
 end
 
 function radio.create_playlists_from_sync(data)
+    print("radio.create_playlists_from_sync")
     if data.playlists==nil then 
+        print("create_playlists_from_sync: no playlists")
         do return end 
     end
     -- make sure files exists

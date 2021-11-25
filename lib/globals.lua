@@ -59,6 +59,8 @@ function fn.path_split(filename)
   return pathname,fname,ext
 end
 
+fn.audio_metadata_cache={}
+
 function fn.audio_metadata(fname)
   -- meta data is of the form
   -- TAG:encoder=Lavc58.54.100 libvorbis
@@ -67,7 +69,9 @@ function fn.audio_metadata(fname)
   -- TAG:metaotherinfo=''
   -- TAG:metafile='DNITA_vocal_phrase_all_the_time_dry_80_Ab_bpm80.wav'
   -- TAG:metabpm='112.96'
-
+  if fn.audio_metadata_cache[fname]~=nil then 
+    return fn.audio_metadata_cache[fname] 
+  end
   local metadata={}
   local tempfile="/tmp/tmp"..math.random()
   local output=util.os_capture("ffprobe -i "..fname.." -show_streams -v quiet > "..tempfile)
@@ -94,6 +98,7 @@ function fn.audio_metadata(fname)
           metadata[string.lower(k)]=v
       end
   end
+  fn.audio_metadata_cache[fname]=metadata
   return metadata
 end
 
@@ -145,8 +150,8 @@ TUNER_MIN = 88
 TUNER_MAX = 108
 tuner_values = {90,94,98,102,106}
 tuner_labels = {90,94,98,102,106}
-eq_labels = {-12,0,12}
-eq_values = {-12,0,12}
+eq_labels = {12,0,-12}
+eq_values = {12,0,-12}
 
 current_station_image = nil
 current_station_image_dir=nil
