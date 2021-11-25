@@ -26,9 +26,9 @@ local enc = function (n, delta)
       params:delta("tuner",delta)
     elseif pages.index == 2 then
       if alt_key_active == false then
-        eq:set_selected_band_rel(delta)
+        eq:set_selected_band_rel(-1*delta)
       else
-        eq:set_all_bands_rel(delta)
+        eq:set_all_bands_rel(-1*delta)
       end 
     elseif pages.index == 3 then
 

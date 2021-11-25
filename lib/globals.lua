@@ -150,8 +150,8 @@ TUNER_MIN = 88
 TUNER_MAX = 108
 tuner_values = {90,94,98,102,106}
 tuner_labels = {90,94,98,102,106}
-eq_labels = {-12,0,12}
-eq_values = {-12,0,12}
+eq_labels = {12,0,-12}
+eq_values = {12,0,-12}
 
 current_station_image = nil
 current_station_image_dir=nil
