@@ -135,6 +135,7 @@ screen_dirty = true
 alt_key_active = false
 
 SETTINGS_PATH = norns.state.data .. "pirate_radio_settings.txt"
+
 -------------------------------------------
 -- ui component global variables
 -------------------------------------------
@@ -146,3 +147,8 @@ tuner_values = {90,94,98,102,106}
 tuner_labels = {90,94,98,102,106}
 eq_labels = {-12,0,12}
 eq_values = {-12,0,12}
+
+current_station_image = nil
+current_station_image_dir=nil
+current_station_image_list=nil
+current_station_image_list_len=nil
