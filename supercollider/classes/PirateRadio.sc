@@ -116,7 +116,9 @@ PirateRadio {
 			Bus.control(server, 1);
 		});
 
+		// buses to send information back to norns
 		totalStrengthBus=Bus.control(server,1);
+		spectrumAnalysisBus=Bus.control(server,10);
 
 
 		//------------------
@@ -153,19 +155,17 @@ PirateRadio {
 		"creating output synth".postln;
 		spectrumSendFreq=0;
 		outputSynth = {
-			arg in, out=0, threshold=0.99, lookahead=0.2, sendFreq=0;
+			arg in, out=0, threshold=0.99, lookahead=0.2, sendFreq=0, specBus;
 			var snd, fft, array, arraySendFreq;
 			snd = In.ar(in, 2);
 			snd = Limiter.ar(snd, threshold, lookahead).clip(-1, 1);
 			fft = FFT(LocalBuf(1024),snd[0]);
 		    array = FFTSubbandPower.kr(fft, [30, 60, 110, 170, 310, 600, 1000, 3000, 6000],scalemode:2);
-		    arraySendFreq=Impulse.kr(sendFreq);
-			(0..9).do({
-				arg i;
-				SendTrig.kr(arraySendFreq,100+i,Lag.kr(Clip.kr(LinLin.kr(array[i].ampdb,-96,96,0,1)),2));
-			});
+		    (0..9).do({ arg i;
+				Out.kr(specBus+i,Lag.kr(Clip.kr(LinLin.kr(array[i].ampdb,-96,96,0,1)),2));
+		    });
 			Out.ar(0, snd);
-		}.play(target:server, args:[\in, outputBus.index,\sendFreq, spectrumSendFreq], addAction:\addToTail);
+		}.play(target:server, args:[\in, outputBus.index,\specBus,spectrumAnalysisBus.index], addAction:\addToTail);
 
 		// send periodic information to norns
 		Routine{
@@ -174,13 +174,11 @@ PirateRadio {
 				totalStrengthBus.get({ arg val;
 					NetAddr("127.0.0.1", 10111).sendMsg("strength",val);
 				});
-				// (0..numStreams-1).do({arg i;
-				//     NetAddr("127.0.0.1", 10111).sendMsg("info",
-				//     	"station",i,
-				//     	"file",streamPlayers[i].fnames[streamPlayers[i].swap],
-				//     	"pos",Main.elapsedTime - streamPlayers[i].fileCurrentPos,
-				//     );
-				// });
+				if (spectrumSendFreq>0,{
+					spectrumAnalysisBus.getn(10,{ arg arr;
+						NetAddr("127.0.0.1", 10111).sendMsg("spectrum",*arr);
+					});
+				});
 			}
 		}.play;
 	}
@@ -227,7 +225,6 @@ PirateRadio {
 		arg value;
 		("setting output send freq to"+value).postln;
 		spectrumSendFreq=value;
-		outputSynth.set(\sendFreq,spectrumSendFreq)
 	}
 
 	// setBand will set the band and bandwidth of station i
@@ -695,7 +692,7 @@ PradStreamSelector {
 
 			// noise is attenuated by inverse of total strength
 			totalstrength=Clip.kr(Mix.new(strengths.collect({arg s; s})));
-			Out.kr(totalStrBus, Lag.kr(totalstrength,0.5));
+			Out.kr(totalStrBus, Lag.kr(totalstrength,0.05));
 
 			// lose frames based on the strength
 			mix=WaveLoss.ar(mix,LinLin.kr(totalstrength,0,1,90,0),100,2);

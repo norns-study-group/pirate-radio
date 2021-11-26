@@ -48,8 +48,12 @@ function oscin.init()
       if marquee~=nil then
         marquee:set_playing_info(tonumber(args[1])+1,args[2])
       end
-    elseif path=="eq" then
-      oscin.eq[tonumber(args[1])]=tonumber(args[2])
+    elseif path=="spectrum" then
+      for i=1,10 do
+        if args[i]~=nil then
+          oscin.eq[i]=tonumber(args[i])
+        end
+      end
     elseif path=="enginestate" then
       oscin.info={}
       local key=""
