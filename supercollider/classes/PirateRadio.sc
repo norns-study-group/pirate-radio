@@ -29,6 +29,11 @@ PirateRadio {
 	var <outputBus;
 	// a control bus for the dial position
 	var <dialBus;
+	// a control bus for the total strength
+	var <totalStrengthBus;
+	// a control bus for the spectrum analyzer
+	var <spectrumAnalysisBus;
+
 
 	//--- child components
 	var <streamPlayers;
@@ -75,15 +80,15 @@ PirateRadio {
 		if (oscTrigger.notNil,{
 			oscTrigger.free;
 		});
-		oscTrigger =  OSCFunc({ arg msg, time;
-		    // [time, msg].postln;
-		    if (msg[2]==1,{
-			    NetAddr("127.0.0.1", 10111).sendMsg("strength",msg[3]);
-		    });
-		    if (msg[2]>99,{
-			    NetAddr("127.0.0.1", 10111).sendMsg("eq",msg[2]-99,msg[3]);
-		    });
-		},'/tr', server.addr);
+		// oscTrigger =  OSCFunc({ arg msg, time;
+		//     // [time, msg].postln;
+		//     if (msg[2]==1,{
+		// 	    NetAddr("127.0.0.1", 10111).sendMsg("strength",msg[3]);
+		//     });
+		//     if (msg[2]>99,{
+		// 	    NetAddr("127.0.0.1", 10111).sendMsg("eq",msg[2]-99,msg[3]);
+		//     });
+		// },'/tr', server.addr);
 
 		//--------------------
 		//-- create busses
@@ -111,6 +116,8 @@ PirateRadio {
 			Bus.control(server, 1);
 		});
 
+		totalStrengthBus=Bus.control(server,1);
+
 
 		//------------------
 		//-- create synths and components
@@ -133,7 +140,7 @@ PirateRadio {
 		noise = PradNoise.new(server, noiseBus, dialBus);
 
 		"creating selector".postln;
-		selector = PradStreamSelector.new(server, streamBusses, strengthBusses, noiseBus, outputBus);
+		selector = PradStreamSelector.new(server, streamBusses, strengthBusses, noiseBus, outputBus, totalStrengthBus);
 
 		// "adding effects".postln;
 		effects = PradEffects.new(server, outputBus);
@@ -161,18 +168,21 @@ PirateRadio {
 		}.play(target:server, args:[\in, outputBus.index,\sendFreq, spectrumSendFreq], addAction:\addToTail);
 
 		// send periodic information to norns
-		// Routine{
-		// 	inf.do{
-		// 		5.sleep;
-		// 		(0..numStreams-1).do({arg i;
-		// 		    NetAddr("127.0.0.1", 10111).sendMsg("info",
-		// 		    	"station",i,
-		// 		    	"file",streamPlayers[i].fnames[streamPlayers[i].swap],
-		// 		    	"pos",Main.elapsedTime - streamPlayers[i].fileCurrentPos,
-		// 		    );
-		// 		});
-		// 	}
-		// }.play;
+		Routine{
+			inf.do{
+				(1/7).sleep;
+				totalStrengthBus.get({ arg val;
+					NetAddr("127.0.0.1", 10111).sendMsg("strength",val);
+				});
+				// (0..numStreams-1).do({arg i;
+				//     NetAddr("127.0.0.1", 10111).sendMsg("info",
+				//     	"station",i,
+				//     	"file",streamPlayers[i].fnames[streamPlayers[i].swap],
+				//     	"pos",Main.elapsedTime - streamPlayers[i].fileCurrentPos,
+				//     );
+				// });
+			}
+		}.play;
 	}
 
 	// set file location
@@ -657,11 +667,11 @@ PradStreamSelector {
 	var <synth;
 
 	*new {
-		arg server, streamBusses, strengthBusses, noiseBus, outBus;
-		^super.new.init(server, streamBusses, strengthBusses, noiseBus, outBus);
+		arg server, streamBusses, strengthBusses, noiseBus, outBus, totalStrBus;
+		^super.new.init(server, streamBusses, strengthBusses, noiseBus, outBus, totalStrBus);
 	}
 
-	init { arg server, streamBusses, strengthBusses, noiseBus, outBus;
+	init { arg server, streamBusses, strengthBusses, noiseBus, outBus, totalStrBus;
 		var numStreams = streamBusses.size;
 
 		// also could define the SynthDef explicitly
@@ -685,7 +695,7 @@ PradStreamSelector {
 
 			// noise is attenuated by inverse of total strength
 			totalstrength=Clip.kr(Mix.new(strengths.collect({arg s; s})));
-			SendTrig.kr(Impulse.kr(6),1,Lag.kr(totalstrength,0.5));
+			Out.kr(totalStrBus, Lag.kr(totalstrength,0.5));
 
 			// lose frames based on the strength
 			mix=WaveLoss.ar(mix,LinLin.kr(totalstrength,0,1,90,0),100,2);
