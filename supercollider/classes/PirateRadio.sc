@@ -42,6 +42,7 @@ PirateRadio {
 	var selector;
 	var effects;
 	var saturator;
+	var sendRoutine;
 	//--- synths
 
 	// final output synth
@@ -168,7 +169,7 @@ PirateRadio {
 		}.play(target:server, args:[\in, outputBus.index,\specBus,spectrumAnalysisBus.index], addAction:\addToTail);
 
 		// send periodic information to norns
-		Routine{
+		sendRoutine=Routine{
 			inf.do{
 				(1/7).sleep;
 				totalStrengthBus.get({ arg val;
@@ -259,6 +260,8 @@ PirateRadio {
 	// stop and free resources
 	free {
 		// by default i tend to free stuff in reverse order of alloctaion
+		sendRoutine.stop;
+		sendRoutine.free;
 		outputSynth.free;
 
 		effects.free;
@@ -266,12 +269,14 @@ PirateRadio {
 		noise.free;
 		streamPlayers.do({ arg player; player.free; });
 
+		totalStrengthBus.free;
+		spectrumAnalysisBus.free;
 		outputBus.free;
 		noiseBus.free;
 		streamBusses.do({ arg bus; bus.free; });
 		strengthBusses.do({ arg bus; bus.free; });
 		oscTrigger.free;
-		"pkill -f oggdec".systemCmd;
+		"pkill -f ogg123".systemCmd;
 		"rm -rf /dev/shm/sc3mp3*".systemCmd;
 	}
 }
