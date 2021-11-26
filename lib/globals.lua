@@ -157,3 +157,4 @@ current_station_image = nil
 current_station_image_dir=nil
 current_station_image_list=nil
 current_station_image_list_len=nil
+animation_mode=nil

@@ -79,7 +79,17 @@ function tuner:redraw()
   screen.font_size(8)
   if current_station_image_list_len~=nil then
     -- animation
-    screen.display_png(current_station_image_dir..current_station_image_list[frame_counter%current_station_image_list_len+1],4,22)
+    local image_id
+    if animation_mode == "ping-pong" then
+      image_id = frame_counter%(current_station_image_list_len*2) + 1
+      if image_id > current_station_image_list_len then
+        image_id = (current_station_image_list_len*2) - image_id + 1
+      end
+    else
+      image_id = frame_counter%current_station_image_list_len+1
+    end
+    screen.display_png(current_station_image_dir..current_station_image_list[image_id],4,22)
+
   elseif current_station_image~=nil and current_station_image~="" then
     -- still image
     if util.file_exists(current_station_image) then

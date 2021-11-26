@@ -71,6 +71,7 @@ function Marquee:update_playing_info(band)
     current_station_image_dir=nil
     current_station_image_list=nil
     current_station_image_list_len=nil
+    animation_mode=nil
     do return end
   end
   local i=closest_station
@@ -82,6 +83,10 @@ function Marquee:update_playing_info(band)
     current_station_image_dir=current_station_image
     current_station_image_list=util.scandir(current_station_image)
     current_station_image_list_len=tab.count(current_station_image_list)
+    animation_mode="standard"
+    if radio_stations[i].animation ~= nil then
+      animation_mode=radio_stations[i].animation
+    end
   end
 end
 
