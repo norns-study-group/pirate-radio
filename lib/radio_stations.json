@@ -21,4 +21,12 @@
     "description": "potted plant",
     "image": "/home/we/dust/code/pirate-radio/art/plant/",
     "animation": "ping-pong"
+},
+{
+    "band": 104.2,
+    "bandwidth":0.3,
+    "name": "yurui",
+    "description": "make it dance",
+    "image": "/home/we/dust/code/pirate-radio/art/yurui/",
+    "animation": "ping-pong"
 }]
