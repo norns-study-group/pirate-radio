@@ -21,6 +21,28 @@ parameters.specs = {
     quantum=0.001,
     wrap=true,
     -- units='khz'
+  },
+  DECAY_TIME = cs.def{
+    min=0.1,
+    max=5.0,
+    warp='lin',
+    step=0.1,
+    -- default=math.random(TUNER_MIN,TUNER_MAX),
+    default = 2,
+    quantum=0.001,
+    wrap=true,
+    -- units='khz'
+  },
+  DELAY_TIME = cs.def{
+    min=0,
+    max=5.0,
+    warp='lin',
+    step=0.1,
+    -- default=math.random(TUNER_MIN,TUNER_MAX),
+    default = 0.2,
+    quantum=0.001,
+    wrap=true,
+    -- units='khz'
   }
 }
 
@@ -52,10 +74,29 @@ function parameters.tuner_func()
   end
 end
 
+function parameters.delay_func(val)
+  engine.fxParam("effect_delay", val)
+end
+
+function parameters.delay_time_func(val)
+  engine.fxParam("effect_delaytime", val)
+end
+
+function parameters.delay_decay_time_func(val)
+  engine.fxParam("effect_delaydecaytime", val)
+end
+
 parameters.add_params = function()
   local specs = parameters.specs
   params:add_control("tuner","tuner",specs.TUNER)
-  params:set_action ("tuner", parameters.tuner_func)
+  params:set_action("tuner", parameters.tuner_func)
+  params:add_separator("effects")
+  params:add_control("delay", "delay")
+  params:set_action("delay", parameters.delay_func)
+  params:add_control("delay_time", "delay time", specs.DELAY_TIME)
+  params:set_action("delay_time", parameters.delay_time_func)
+  params:add_control("delay_decay_time", "delay decay time", specs.DECAY_TIME)
+  params:set_action("delay_decay_time", parameters.delay_decay_time_func)
 end
 
 return parameters
