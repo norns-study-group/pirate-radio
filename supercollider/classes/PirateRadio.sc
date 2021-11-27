@@ -15,6 +15,9 @@ PirateRadio {
 	//----- instance variables
 	//----- created for each new `PirateRadio` object
 
+	//--- toggles
+	var <spectrumSendFreq;
+
 	//--- busses
 	// array of busses for streams
 	var <streamBusses;
@@ -26,6 +29,11 @@ PirateRadio {
 	var <outputBus;
 	// a control bus for the dial position
 	var <dialBus;
+	// a control bus for the total strength
+	var <totalStrengthBus;
+	// a control bus for the spectrum analyzer
+	var <spectrumAnalysisBus;
+
 
 	//--- child components
 	var <streamPlayers;
@@ -34,6 +42,7 @@ PirateRadio {
 	var selector;
 	var effects;
 	var saturator;
+	var sendRoutine;
 	//--- synths
 
 	// final output synth
@@ -72,12 +81,15 @@ PirateRadio {
 		if (oscTrigger.notNil,{
 			oscTrigger.free;
 		});
-		oscTrigger =  OSCFunc({ arg msg, time;
-		    // [time, msg].postln;
-		    if (msg[2]==1,{
-			    NetAddr("127.0.0.1", 10111).sendMsg("strength",msg[3]);
-		    });
-		},'/tr', server.addr);
+		// oscTrigger =  OSCFunc({ arg msg, time;
+		//     // [time, msg].postln;
+		//     if (msg[2]==1,{
+		// 	    NetAddr("127.0.0.1", 10111).sendMsg("strength",msg[3]);
+		//     });
+		//     if (msg[2]>99,{
+		// 	    NetAddr("127.0.0.1", 10111).sendMsg("eq",msg[2]-99,msg[3]);
+		//     });
+		// },'/tr', server.addr);
 
 		//--------------------
 		//-- create busses
@@ -105,6 +117,10 @@ PirateRadio {
 			Bus.control(server, 1);
 		});
 
+		// buses to send information back to norns
+		totalStrengthBus=Bus.control(server,1);
+		spectrumAnalysisBus=Bus.control(server,10);
+
 
 		//------------------
 		//-- create synths and components
@@ -127,10 +143,10 @@ PirateRadio {
 		noise = PradNoise.new(server, noiseBus, dialBus);
 
 		"creating selector".postln;
-		selector = PradStreamSelector.new(server, streamBusses, strengthBusses, noiseBus, outputBus);
+		selector = PradStreamSelector.new(server, streamBusses, strengthBusses, noiseBus, outputBus, totalStrengthBus);
 
 		// "adding effects".postln;
-		// effects = PradEffects.new(server, outputBus);
+		effects = PradEffects.new(server, outputBus);
 
 		// "adding saturator".postln;
 		// saturator = PradStereoBitSaturator.new(server, server, outputBus);
@@ -138,24 +154,31 @@ PirateRadio {
 		// TODO: add 10-band equalizer at the end?
 
 		"creating output synth".postln;
+		spectrumSendFreq=0;
 		outputSynth = {
-			arg in, out=0, threshold=0.99, lookahead=0.2;
-			var snd;
+			arg in, out=0, threshold=0.99, lookahead=0.2, sendFreq=0, specBus;
+			var snd, fft, array, arraySendFreq;
 			snd = In.ar(in, 2);
 			snd = Limiter.ar(snd, threshold, lookahead).clip(-1, 1);
+			fft = FFT(LocalBuf(1024),snd[0]);
+		    array = FFTSubbandPower.kr(fft, [30, 60, 110, 170, 310, 600, 1000, 3000, 6000],scalemode:2);
+		    (0..9).do({ arg i;
+				Out.kr(specBus+i,Lag.kr(Clip.kr(LinLin.kr(array[i].ampdb,-96,96,0,1)),2));
+		    });
 			Out.ar(0, snd);
-		}.play(target:server, args:[\in, outputBus.index], addAction:\addToTail);
+		}.play(target:server, args:[\in, outputBus.index,\specBus,spectrumAnalysisBus.index], addAction:\addToTail);
 
 		// send periodic information to norns
-		Routine{
+		sendRoutine=Routine{
 			inf.do{
-				5.sleep;
-				(0..numStreams-1).do({arg i;
-				    NetAddr("127.0.0.1", 10111).sendMsg("info",
-				    	"station",i,
-				    	"file",streamPlayers[i].fnames[streamPlayers[i].swap],
-				    	"pos",Main.elapsedTime - streamPlayers[i].fileCurrentPos,
-				    );
+				(1/7).sleep;
+				totalStrengthBus.get({ arg val;
+					NetAddr("127.0.0.1", 10111).sendMsg("strength",val);
+				});
+				if (spectrumSendFreq>0,{
+					spectrumAnalysisBus.getn(10,{ arg arr;
+						NetAddr("127.0.0.1", 10111).sendMsg("spectrum",*arr);
+					});
 				});
 			}
 		}.play;
@@ -198,6 +221,13 @@ PirateRadio {
 		dial.setDial(value);
 	}
 
+	// set the dial position
+	setSpectrumSendFreq {
+		arg value;
+		("setting output send freq to"+value).postln;
+		spectrumSendFreq=value;
+	}
+
 	// setBand will set the band and bandwidth of station i
 	setBand {
 		arg i,band,bandwidth;
@@ -230,6 +260,8 @@ PirateRadio {
 	// stop and free resources
 	free {
 		// by default i tend to free stuff in reverse order of alloctaion
+		sendRoutine.stop;
+		sendRoutine.free;
 		outputSynth.free;
 
 		effects.free;
@@ -237,12 +269,14 @@ PirateRadio {
 		noise.free;
 		streamPlayers.do({ arg player; player.free; });
 
+		totalStrengthBus.free;
+		spectrumAnalysisBus.free;
 		outputBus.free;
 		noiseBus.free;
 		streamBusses.do({ arg bus; bus.free; });
 		strengthBusses.do({ arg bus; bus.free; });
 		oscTrigger.free;
-		"pkill -f oggdec".systemCmd;
+		"pkill -f ogg123".systemCmd;
 		"rm -rf /dev/shm/sc3mp3*".systemCmd;
 	}
 }
@@ -318,7 +352,7 @@ PradStreamPlayer {
 		inDialBus=inDialBusArg;
 		filePaths=List();
 		swap = 0;
-		crossfade=1;
+		crossfade=20;
 		fileIndexCurrent=(-1);
 		fileCurrentPos=0;
 		fileScheduler=0;
@@ -349,9 +383,11 @@ PradStreamPlayer {
 				if (filePaths[fileIndexCurrent]==nil,{
 					fileIndexCurrent=0;
 				});
+				("station "+id+" queing next file "+(fileIndexCurrent+1)+" of "+filePaths.size).postln;
 				nextFile=filePaths[fileIndexCurrent];
 			});
 		},{
+			("using special file "+fileSpecial).postln;
 			nextFile=fileSpecial;
 			fileSpecial=nil;
 		});
@@ -493,11 +529,15 @@ PradStreamPlayer {
 	addFile {
 		arg fname;
 		if (fname.notNil,{
+			("station"+id+"adding file"+fname).postln;
 			filePaths=filePaths.add(fname);
+		},{
+			"addFile: filename is nil!".postln;
 		});
 	}
 
 	clearFiles {
+		("station"+id+"clearing files").postln;
 		filePaths=List();
 	}
 
@@ -583,7 +623,7 @@ PradEffects {
 		synth = {
 			// ... whatever args
 			arg bus, chorusRate=0.2, preGain=1.0,
-			band1,band2,band3,band4,band5,band6,band7,band8,band9,band10;
+			band1=0,band2=0,band3=0,band4=0,band5=0,band6=0,band7=0,band8=0,band9=0,band10=0;
 
 			var snd;
 			snd = In.ar(bus, 2);
@@ -601,20 +641,22 @@ PradEffects {
 			snd = BPeakEQ.ar(snd,16000,db:band10);
 
 			////////////////
-			snd = DelayC.ar(snd, delaytime:LFNoise2.kr(chorusRate).linlin(-1,1, 0.01, 0.06));
-			snd = Greyhole.ar(snd);
-			snd = (snd*preGain).distort.distort;
+			// snd = DelayC.ar(snd, delaytime:LFNoise2.kr(chorusRate).linlin(-1,1, 0.01, 0.06));
+			// snd = Greyhole.ar(snd);
+			// snd = (snd*preGain).distort.distort;
 			//... or whatever
 			///////////
 
 			// `ReplaceOut` overwrites the bus contents (unlike `Out` which mixes)
 			// so this is how to do an "insert" processor
 			ReplaceOut.ar(bus, snd);
-
 		}.play(target:server, args:[\bus, bus.index], addAction:\addToTail);
 	}
 
-
+	setParam {
+		arg key, value;
+		synth.set(key, value);
+	}
 
 	free {
 		synth.free;
@@ -627,11 +669,11 @@ PradStreamSelector {
 	var <synth;
 
 	*new {
-		arg server, streamBusses, strengthBusses, noiseBus, outBus;
-		^super.new.init(server, streamBusses, strengthBusses, noiseBus, outBus);
+		arg server, streamBusses, strengthBusses, noiseBus, outBus, totalStrBus;
+		^super.new.init(server, streamBusses, strengthBusses, noiseBus, outBus, totalStrBus);
 	}
 
-	init { arg server, streamBusses, strengthBusses, noiseBus, outBus;
+	init { arg server, streamBusses, strengthBusses, noiseBus, outBus, totalStrBus;
 		var numStreams = streamBusses.size;
 
 		// also could define the SynthDef explicitly
@@ -655,7 +697,7 @@ PradStreamSelector {
 
 			// noise is attenuated by inverse of total strength
 			totalstrength=Clip.kr(Mix.new(strengths.collect({arg s; s})));
-			SendTrig.kr(Impulse.kr(10),1,totalstrength);
+			Out.kr(totalStrBus, Lag.kr(totalstrength,0.05));
 
 			// lose frames based on the strength
 			mix=WaveLoss.ar(mix,LinLin.kr(totalstrength,0,1,90,0),100,2);

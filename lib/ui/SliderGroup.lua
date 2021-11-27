@@ -34,6 +34,7 @@ function SliderGroup:new(args)
         local last_slider = slider
         args.x = sg.slider_args_middle.width and last_slider.x + sg.slider_args_middle.width + sg.margin
       end
+      args.id=i
       slider = Slider:new(args)
       table.insert(sg.sliders,slider)
     end

@@ -1,4 +1,4 @@
--- global functions and variables 
+-- global functions and variables
 
 -------------------------------------------
 -- global functions
@@ -40,16 +40,16 @@ function fn.load_json(fname)
   local f = assert(io.open(fname,"rb"))
   local content = f:read("*all")
   f:close()
-  if content==nil then 
-    do return end 
+  if content==nil then
+    do return end
   end
   return json.decode(content)
 end
 
 function fn.index_of(arr,num)
-  for i,v in ipairs(arr) do 
-    if num==v then 
-      do return i end 
+  for i,v in ipairs(arr) do
+    if num==v then
+      do return i end
     end
   end
 end
@@ -59,6 +59,8 @@ function fn.path_split(filename)
   return pathname,fname,ext
 end
 
+fn.audio_metadata_cache={}
+
 function fn.audio_metadata(fname)
   -- meta data is of the form
   -- TAG:encoder=Lavc58.54.100 libvorbis
@@ -67,24 +69,26 @@ function fn.audio_metadata(fname)
   -- TAG:metaotherinfo=''
   -- TAG:metafile='DNITA_vocal_phrase_all_the_time_dry_80_Ab_bpm80.wav'
   -- TAG:metabpm='112.96'
-
+  if fn.audio_metadata_cache[fname]~=nil then 
+    return fn.audio_metadata_cache[fname] 
+  end
   local metadata={}
   local tempfile="/tmp/tmp"..math.random()
   local output=util.os_capture("ffprobe -i "..fname.." -show_streams -v quiet > "..tempfile)
   local lines = {}
-  for line in io.lines(tempfile) do 
+  for line in io.lines(tempfile) do
       lines[#lines + 1] = line
   end
   util.os_capture("rm "..tempfile)
-  for i,line in ipairs(lines) do 
+  for i,line in ipairs(lines) do
       local prefix="TAG:"
-      if line:find(prefix,1,#prefix) then 
+      if line:find(prefix,1,#prefix) then
           local kv=string.sub(line,#prefix+1)
           local equalsloc=string.find(kv,"=")
           k=string.sub(kv,1,equalsloc-1)
           local v=""
           local quoteloc=string.find(string.sub(kv,equalsloc),"'")
-          if quoteloc~=nil then 
+          if quoteloc~=nil then
               v=string.sub(kv,equalsloc+2)
               quoteloc=string.find(v,"'")
               v=string.sub(v,1,quoteloc-1)
@@ -94,6 +98,7 @@ function fn.audio_metadata(fname)
           metadata[string.lower(k)]=v
       end
   end
+  fn.audio_metadata_cache[fname]=metadata
   return metadata
 end
 
@@ -113,7 +118,7 @@ function fn.ffmpeg_seconds_format(seconds)
 	minutes = minutes + 1
 	seconds = seconds - 60
   end
-  while minutes > 60 do 
+  while minutes > 60 do
 	  minutes = minutes - 60
 	  hours = hours +1
   end
@@ -125,6 +130,7 @@ end
 -- global variables
 -------------------------------------------
 SCREEN_FRAMERATE = 1/7
+frame_counter = 0
 SCREEN_SIZE = {x=127,y=64}
 NUM_PAGES = 5
 
@@ -134,6 +140,7 @@ screen_dirty = true
 alt_key_active = false
 
 SETTINGS_PATH = norns.state.data .. "pirate_radio_settings.txt"
+
 -------------------------------------------
 -- ui component global variables
 -------------------------------------------
@@ -143,8 +150,11 @@ TUNER_MIN = 88
 TUNER_MAX = 108
 tuner_values = {90,94,98,102,106}
 tuner_labels = {90,94,98,102,106}
-eq_labels = {-12,0,12}
-eq_values = {-12,0,12}
+eq_labels = {12,0,-12}
+eq_values = {12,0,-12}
 
-
-
+current_station_image = nil
+current_station_image_dir=nil
+current_station_image_list=nil
+current_station_image_list_len=nil
+animation_mode=nil

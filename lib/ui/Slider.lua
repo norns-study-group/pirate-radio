@@ -15,7 +15,7 @@ function Slider:new(args)
   slider.tick_position = args.tick_position
   slider.border = args.border and args.border or false
   slider.warp = args.warp==nil and 'lin' or args.warp
-  slider.outline_level = 10
+  slider.outline_level = 6
   slider.pointer_min = slider.orientation=='h' and slider.x + slider.margin or slider.y + slider.margin
   slider.pointer_max = slider.orientation=='h' and slider.x+slider.width-slider.margin or slider.y+slider.height-slider.margin
 
@@ -55,7 +55,6 @@ function Slider:new(args)
     if self.pointer_loc_callback~=nil then
       self.pointer_loc_callback(loc)
     end
-    clock.run(fn.set_screen_dirty)
   end
 
   function slider:get_selected()
@@ -114,7 +113,7 @@ function Slider:new(args)
       mark_end[1] = math.floor(mark_end[1])
       mark_end[2] = math.floor(mark_end[2])
 
-    -- draw the tick mark
+      -- draw the tick mark
       screen.move(mark_start[1],mark_start[2])
       screen.line_rel(mark_end[1],mark_end[2])
       

@@ -12,8 +12,8 @@ function Marquee:new(o)
 end
 
 function Marquee:draw(x,y,w)
-    if self.text=="" then 
-      do return end 
+    if self.text=="" then
+      do return end
     end
     y=y+8
     local t=self.text
@@ -42,16 +42,16 @@ function Marquee:draw(x,y,w)
 end
 
 function Marquee:set_playing_info(i,filename)
-  if radio_stations[i].name==nil then 
-    do return end 
+  if radio_stations[i].name==nil then
+    do return end
   end
-  self.station_text[i]=radio_stations[i].name.."'"..radio_stations[i].description.."'"
+  self.station_text[i]=radio_stations[i].name..' "'..radio_stations[i].description..'"'
   local metadata=fn.audio_metadata(filename)
-  if metadata~=nil then 
+  if metadata~=nil then
     if metadata.metafile~=nil then
       self.station_text[i]=self.station_text[i].." playing "..metadata.metafile
     end
-    if metadata.metaartist~=nil and metadata.metaartist~="" then 
+    if metadata.metaartist~=nil and metadata.metaartist~="" then
       self.station_text[i]=self.station_text[i].." by "..metadata.metaartist
     end
   end
@@ -61,19 +61,33 @@ end
 function Marquee:update_playing_info(band)
   local closest_station=0
   for i,v in ipairs(radio_stations) do
-    if math.abs(band-v.band)<v.bandwidth then 
+    if math.abs(band-v.band)<v.bandwidth then
       closest_station=i
     end
   end
-  if closest_station==0 then 
+  if closest_station==0 then
     self.text=""
-    do return end 
+    current_station_image=nil
+    current_station_image_dir=nil
+    current_station_image_list=nil
+    current_station_image_list_len=nil
+    animation_mode=nil
+    do return end
   end
   local i=closest_station
-  if self.station_text[i]~=nil then 
+  if self.station_text[i]~=nil then
     self.text=self.station_text[i]
+  end
+  current_station_image=radio_stations[i].image
+  if current_station_image:sub(-1) == "/" then
+    current_station_image_dir=current_station_image
+    current_station_image_list=util.scandir(current_station_image)
+    current_station_image_list_len=tab.count(current_station_image_list)
+    animation_mode="standard"
+    if radio_stations[i].animation ~= nil then
+      animation_mode=radio_stations[i].animation
+    end
   end
 end
 
 return Marquee
-
