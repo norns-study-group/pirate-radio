@@ -72,6 +72,7 @@ function Marquee:update_playing_info(band)
     current_station_image_list=nil
     current_station_image_list_len=nil
     animation_mode=nil
+    animation_framerate=nil
     do return end
   end
   local i=closest_station
@@ -86,6 +87,10 @@ function Marquee:update_playing_info(band)
     animation_mode="standard"
     if radio_stations[i].animation ~= nil then
       animation_mode=radio_stations[i].animation
+    end
+    animation_framerate=SCREEN_FRAMERATE
+    if radio_stations[i].animation_fps ~= nil then
+      animation_framerate=1/radio_stations[i].animation_fps
     end
   end
 end

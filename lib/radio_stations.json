@@ -20,7 +20,8 @@
     "name": "kink",
     "description": "potted plant",
     "image": "/home/we/dust/code/pirate-radio/art/plant/",
-    "animation": "ping-pong"
+    "animation": "ping-pong",
+    "animation_fps": 7
 },
 {
     "band": 104.2,
@@ -28,5 +29,6 @@
     "name": "yurui",
     "description": "make it dance",
     "image": "/home/we/dust/code/pirate-radio/art/yurui/",
-    "animation": "ping-pong"
+    "animation": "ping-pong",
+    "animation_fps": 14
 }]
