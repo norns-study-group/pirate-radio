@@ -8,6 +8,14 @@
     "image": "/home/we/dust/code/pirate-radio/art/90.3.png"
 },
 {
+    "band": 92.5,
+    "bandwidth":0.3,
+    "name": "yoyo",
+    "description": "spins",
+    "image": "/home/we/dust/code/pirate-radio/art/yoyo/",
+    "animation_fps": 7
+},
+{
     "band": 94.7,
     "bandwidth":0.3,
     "name": "knrk",
