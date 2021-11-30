@@ -624,10 +624,16 @@ PradEffects {
 			// ... whatever args
 			arg bus, chorusRate=0.2, preGain=1.0,
 			band1=0,band2=0,band3=0,band4=0,band5=0,band6=0,band7=0,band8=0,band9=0,band10=0,
+			effect_delay=0, effect_delaytime=0.2, effect_delaydecaytime=2, effect_delaymul=1,
+			effect_granulator=0, effect_graintrigger=10, grainDur=0.2, effect_grainrate=1, effect_grainpos=0, effect_graininterp=2, effect_grainmul=1,
+			grainPan=0;
+
+			var snd, combBuf1, grnBuf1, effect_maxgrains=512;
 			effect_delay=0, effect_delaytime=0.2, effect_delaydecaytime=2, effect_delaymul=1;
 
 			var snd, combBuf1;
-			snd = In.ar(bus, 2);
+
+      snd = In.ar(bus, 2);
 
 			// 10-band equalizer
 			snd = BPeakEQ.ar(snd,60,db:band1);
@@ -648,10 +654,23 @@ PradEffects {
 			//... or whatever
 			///////////
 			
+
+      // granulator
+			grnBuf1 = Buffer.alloc(server,server.sampleRate*1);
+			snd = (snd*(1-effect_granulator))+
+				(effect_granulator*GrainIn.ar(
+					2,
+					Impulse.kr(effect_graintrigger),
+					grainDur,
+					snd,
+					grainPan
+			));
+
 			// delay
       		combBuf1 = Buffer.alloc(server,48000,2);
       		snd = (snd*(1-effect_delay))+(effect_delay*BufCombC.ar(combBuf1,snd,effect_delaytime,effect_delaydecaytime,effect_delaymul));
-			// `ReplaceOut` overwrites the bus contents (unlike `Out` which mixes)
+
+      // `ReplaceOut` overwrites the bus contents (unlike `Out` which mixes)
 			// so this is how to do an "insert" processor
 			ReplaceOut.ar(bus, snd);
 		}.play(target:server, args:[\bus, bus.index], addAction:\addToTail);

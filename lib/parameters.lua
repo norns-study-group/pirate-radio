@@ -43,6 +43,17 @@ parameters.specs = {
     quantum=0.001,
     wrap=true,
     -- units='khz'
+  },
+  GRAIN_DURATION = cs.def{
+    min=0.001,
+    max=0.2,
+    warp='lin',
+    step=0.001,
+    -- default=math.random(TUNER_MIN,TUNER_MAX),
+    default = 0.1,
+    quantum=0.001,
+    wrap=true,
+    -- units='khz'
   }
 }
 
@@ -86,8 +97,18 @@ function parameters.delay_decay_time_func(val)
   engine.fxParam("effect_delaydecaytime", val)
 end
 
+function parameters.granulator_func(val)
+  engine.fxParam("effect_granulator", val)
+end
+
+function parameters.grain_duration_func(val)
+  engine.fxParam("grainDur", val)
+end
+
 parameters.add_params = function()
+
   local specs = parameters.specs
+  
   params:add_control("tuner","tuner",specs.TUNER)
   params:set_action("tuner", parameters.tuner_func)
   params:add_separator("effects")
@@ -97,6 +118,10 @@ parameters.add_params = function()
   params:set_action("delay_time", parameters.delay_time_func)
   params:add_control("delay_decay_time", "delay decay time", specs.DECAY_TIME)
   params:set_action("delay_decay_time", parameters.delay_decay_time_func)
+  params:add_control("granulator", "granulator")
+  params:set_action("granulator", parameters.granulator_func)
+  params:add_control("grain_duration", "grain duration", specs.GRAIN_DURATION)
+  params:set_action("grain_duration", parameters.grain_duration_func)
 end
 
 return parameters
