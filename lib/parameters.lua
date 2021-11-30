@@ -106,7 +106,9 @@ function parameters.grain_duration_func(val)
 end
 
 parameters.add_params = function()
+
   local specs = parameters.specs
+  
   params:add_control("tuner","tuner",specs.TUNER)
   params:set_action("tuner", parameters.tuner_func)
   params:add_separator("effects")

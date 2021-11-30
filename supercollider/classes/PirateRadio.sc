@@ -629,7 +629,11 @@ PradEffects {
 			grainPan=0;
 
 			var snd, combBuf1, grnBuf1, effect_maxgrains=512;
-			snd = In.ar(bus, 2);
+			effect_delay=0, effect_delaytime=0.2, effect_delaydecaytime=2, effect_delaymul=1;
+
+			var snd, combBuf1;
+
+      snd = In.ar(bus, 2);
 
 			// 10-band equalizer
 			snd = BPeakEQ.ar(snd,60,db:band1);
@@ -650,7 +654,8 @@ PradEffects {
 			//... or whatever
 			///////////
 			
-			// granulator
+
+      // granulator
 			grnBuf1 = Buffer.alloc(server,server.sampleRate*1);
 			snd = (snd*(1-effect_granulator))+
 				(effect_granulator*GrainIn.ar(
@@ -665,7 +670,7 @@ PradEffects {
       		combBuf1 = Buffer.alloc(server,48000,2);
       		snd = (snd*(1-effect_delay))+(effect_delay*BufCombC.ar(combBuf1,snd,effect_delaytime,effect_delaydecaytime,effect_delaymul));
 
-			// `ReplaceOut` overwrites the bus contents (unlike `Out` which mixes)
+      // `ReplaceOut` overwrites the bus contents (unlike `Out` which mixes)
 			// so this is how to do an "insert" processor
 			ReplaceOut.ar(bus, snd);
 		}.play(target:server, args:[\bus, bus.index], addAction:\addToTail);
