@@ -147,6 +147,9 @@ function eq:redraw()
   for i=1,#eq.components,1 do
     self.components[i]:redraw()
   end
+  screen.level(15)
+  screen.move(5,51)
+  screen.text('EQ: '..parameters.eq_names[params:get("eq_preset")])
 end
 
 return eq

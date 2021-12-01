@@ -1,5 +1,20 @@
 [
-  {
+    {
+      "name": "Custom",
+      "eq": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
     "name": "Classical",
     "eq": [
       0,
@@ -60,7 +75,7 @@
     ]
   },
   {
-    "name": "Laptop speakers/headphones",
+    "name": "Laptop",
     "eq": [
       3.9,
       8.7,

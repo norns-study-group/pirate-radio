@@ -70,6 +70,30 @@ local key = function (n,z)
     elseif(pages.index == 5) then
             
     end
+  elseif (n == 2 and z == 1)  then 
+    if pages.index == 1 then
+
+    elseif pages.index == 2 then
+      params:delta("eq_preset",-1)
+    elseif pages.index == 3 then
+
+    elseif(pages.index == 4) then
+
+    elseif(pages.index == 5) then
+            
+    end
+  elseif (n == 3 and z == 1)  then 
+    if pages.index == 1 then
+
+    elseif pages.index == 2 then
+      params:delta("eq_preset",1)
+    elseif pages.index == 3 then
+
+    elseif(pages.index == 4) then
+
+    elseif(pages.index == 5) then
+            
+    end
   end
   screen_dirty = true
 end
