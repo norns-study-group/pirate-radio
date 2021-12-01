@@ -629,11 +629,8 @@ PradEffects {
 			grainPan=0;
 
 			var snd, combBuf1, grnBuf1, effect_maxgrains=512;
-			effect_delay=0, effect_delaytime=0.2, effect_delaydecaytime=2, effect_delaymul=1;
 
-			var snd, combBuf1;
-
-      snd = In.ar(bus, 2);
+	      		snd = In.ar(bus, 2);
 
 			// 10-band equalizer
 			snd = BPeakEQ.ar(snd,60,db:band1);
