@@ -12,7 +12,7 @@ function radio.init()
         --              id  band bandwidth
         engine.band(i-1,station.band,station.bandwidth)
     end
-    radio.create_playlist_from_tapes()
+    -- radio.create_playlist_from_tapes()
     radio.create_weather_station()
 
     -- startup dust2dust
@@ -55,7 +55,8 @@ function radio.create_weather_station()
     if util.file_exists("/dev/shm/weather.wav") then
         engine.clearFiles(0)
         engine.addFile(0,"/dev/shm/weather.wav")
-        engine.refresh()
+        engine.setCrossfade(0,0.5);
+        -- engine.refresh()
     end
 end
 
@@ -137,14 +138,18 @@ function radio.create_playlists_from_pirate_radio()
     local files=util.scandir(_path.audio.."pirate-radio")
     files=fn.shuffle(files)
     for _, f in ipairs(files) do
-        if not string.find(f,".ogg") then goto continue end
         local fname=_path.audio.."pirate-radio/"..f
-        local metadata=fn.audio_metadata(fname)
-        if metadata==nil then goto continue end 
-        local station_index=radio.index_of_station(metadata.metaband)
-        if station_index==nil then goto continue end
-        radio.add_file_to_station(station_index,fname)
-        ::continue::
+        _,_,ext=fn.path_split(fname)
+        if ext=="ogg" then 
+            print(fname)
+            local metadata=fn.audio_metadata(fname)
+            if metadata~=nil then 
+                local station_index=radio.index_of_station(metadata.metaband)
+                if station_index~=nil then 
+                    radio.add_file_to_station(station_index,fname)
+                end
+             end 
+        end
     end
 
     -- make sure to refresh the engine

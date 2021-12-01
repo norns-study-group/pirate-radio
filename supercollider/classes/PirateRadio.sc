@@ -234,6 +234,12 @@ PirateRadio {
 		streamPlayers[i].setBand(band,bandwidth);
 	}
 
+	// setCrossfade will change the crossfade time (default 20 seconds)
+	setCrossfade {
+		arg i, xfade;
+		streamPlayers[i].setCrossfade(i,xfade);
+	}
+
 	addFile {
 		arg i,fname;
 		streamPlayers[i].addFile(fname);
@@ -266,11 +272,13 @@ PirateRadio {
 
 		effects.free;
 		selector.free;
+		dial.free;
 		noise.free;
 		streamPlayers.do({ arg player; player.free; });
 
 		totalStrengthBus.free;
 		spectrumAnalysisBus.free;
+		dialBus.free;
 		outputBus.free;
 		noiseBus.free;
 		streamBusses.do({ arg bus; bus.free; });
@@ -523,6 +531,11 @@ PradStreamPlayer {
 		band=ba;
 		bandwidth=bw;
 		synths.do({ arg synth; synth.set(\ba, band,\bw,bandwidth); });
+	}
+
+	setCrossfade {
+		arg xfade;
+		crossfade=xfade;
 	}
 
 	// setFilePaths will configure the indicies allowed to play through

@@ -15,10 +15,6 @@ function weather.init()
     else
       place=place.." and shining booty awaits yee beyond the great blue yonder."
     end
-    place=place.." "
-    for i=1,2 do
-      place=place..place
-    end
     file=io.open("/dev/shm/weather.txt","w")
     io.output(file)
     io.write(place)
