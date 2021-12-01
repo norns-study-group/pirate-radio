@@ -16,16 +16,19 @@ function weather.init()
       place=place.." and shining booty awaits yee beyond the great blue yonder."
     end
     place=place.." "
-    for i=1,6 do
+    for i=1,2 do
       place=place..place
     end
     file=io.open("/dev/shm/weather.txt","w")
     io.output(file)
     io.write(place)
     io.close(file)
-    local yarr=util.os_capture("espeak -k20 -s 120 -m -f /dev/shm/weather.txt -w /dev/shm/weather.wav")
-    -- setup engine
-    radio.create_weather_station()
+    local yarr="espeak -k20 -s 120 -m -f /dev/shm/weather.txt -w /dev/shm/weather.wav"
+    norns.system_cmd(yarr,function(outt)
+     -- setup engine
+     print("creating weather station")
+     radio.create_weather_station()
+    end)
   end)
 end
 
