@@ -140,6 +140,7 @@ function debouncer_timer_init()
       weather.init()
       sync:download()
       dust2dust:send({message="need-sync"})
+      comments.init()
     end
     screen_dirty = true
   end,1,-1)

@@ -47,6 +47,9 @@ dust2dust_= include "pirate-radio/lib/dust2dust"
 -- radio engine
 radio = include "pirate-radio/lib/radio"
 
+-- comments
+comments = include "pirate-radio/lib/comments"
+
 -- pre-req installation
 prereqs = include "pirate-radio/lib/prereqs"
 
