@@ -6,7 +6,8 @@
 local eq = {}
 
 eq.components = {}
-
+eq.updating_from_param = {false,false,false,false,false,false,false,false,false,false}
+eq.updating_from_ui = {false,false,false,false,false,false,false,false,false,false}
 function eq.init()
   if debug == true then
     eqc = eq.components
@@ -78,7 +79,14 @@ function eq:build_ui()
   for i, _ in ipairs(self.bands.sliders) do
     eq.bands.sliders[i].pointer_loc_callback=function(a) 
       local val=util.linlin(13,33,18,-18,a)
+      
       engine.fxParam("band"..i,val)
+      if eq.updating_from_param[i] == false then
+        eq.updating_from_ui[i] = true
+        params:set("eq"..i, val)
+      else
+        eq.updating_from_param[i] = false
+      end
     end
   end
   
@@ -89,6 +97,7 @@ function eq:build_ui()
 end
 
 function eq:set_band(value,band)
+  -- print("value,band",value,band)
   local p_min = self.bands.sliders[band].pointer_min
   local p_max = self.bands.sliders[band].pointer_max
   value = util.clamp(value,self.first_value,self.last_value)
@@ -100,6 +109,13 @@ function eq:set_all_bands(value)
   for i=1,eq.num_bands,1 do
     eq:set_band(value,i)
   end
+end
+
+function eq:set_band_rel(band,delta, from_eq)
+  eq.bands.sliders[band]:set_pointer_loc_rel(delta)
+  -- if from_eq == false then
+  --   params:set("eq"..band, delta)
+  -- end
 end
 
 function eq:set_selected_band_rel(delta)

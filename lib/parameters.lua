@@ -122,6 +122,43 @@ parameters.add_params = function()
   params:set_action("granulator", parameters.granulator_func)
   params:add_control("grain_duration", "grain duration", specs.GRAIN_DURATION)
   params:set_action("grain_duration", parameters.grain_duration_func)
+
+  -- add eq params
+  params:add_group("eq",#eq.bands.sliders)
+  for i=1,#eq.bands.sliders,1 do
+    local minmax = eq.bands.sliders[i]:get_minmax_values()
+    local spec = cs.def{
+      min=minmax.max,
+      max=minmax.min,
+      step=0.1,
+      default = 0,
+      quantum=0.01,
+      wrap=false,
+    }
+    params:add{
+      type="control", 
+      id="eq"..i, 
+      name="eq"..i, 
+      controlspec=spec, 
+      action=function(val)
+        val = val*-1
+        if initializing == false then
+          local p_min = eq.bands.sliders[i].pointer_min
+          local p_max = eq.bands.sliders[i].pointer_max
+          local eq_val_new = util.linlin(0,minmax.min+minmax.min+1,p_min,p_max,val+minmax.min) 
+          local current_pointer_loc = eq.bands.sliders[i].pointer_loc
+          local eq_val_delta = (eq_val_new - current_pointer_loc)
+          -- print("band,val,delta, eq_val_new, current_pointer_loc",i,val,eq_val_delta, eq_val_new, current_pointer_loc)
+          if eq.updating_from_ui[i] == false then
+            eq.updating_from_param[i] = true
+            eq:set_band_rel(i,math.floor(eq_val_delta), true)
+          else
+            eq.updating_from_ui[i] = false
+          end
+        end
+      end
+    }
+  end
 end
 
 return parameters

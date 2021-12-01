@@ -23,6 +23,28 @@ function Slider:new(args)
 
   slider.TICK_LEVEL = 3
 
+  function slider:get_minmax_values()
+    local p_len = slider.orientation=='h' and slider.width or slider.height
+    local p_start = slider.orientation=='h' and slider.x or slider.y
+    slider.converted_margin = math.ceil(util.linlin(
+      slider.margin,
+      p_len-slider.margin,
+      0,
+      math.abs(slider.tick_values[#slider.tick_values]-slider.tick_values[1]),
+      p_start+(slider.margin*2) 
+    ))
+  
+    if slider.tick_values[1] < slider.tick_values[#slider.tick_values] then
+      slider.min_value = slider.tick_values[1] - slider.converted_margin
+      slider.max_value = slider.tick_values[#slider.tick_values] + slider.converted_margin
+    else
+      slider.min_value = slider.tick_values[1] + (slider.converted_margin-slider.tick_values[1])
+      slider.max_value = slider.tick_values[#slider.tick_values] - (slider.converted_margin-slider.tick_values[1])
+    end
+  
+    return {min=slider.min_value,max=slider.max_value}
+  end
+    
   function slider:get_pointer_loc()
     return self.pointer_loc 
   end
