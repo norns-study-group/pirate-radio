@@ -26,7 +26,7 @@ function playback.init()
   -- init parameters
   -- TODO: put a separator or a group or something
   params:add_separator("playback")
-  params:add_control("playback_rate","rate",controlspec.new(-1,1,'lin',0.01,1,'s',0.01/2))
+  params:add_control("playback_rate","rate",controlspec.new(-1,1,'lin',0.05,1,'s',0.05/2))
   params:set_action("playback_rate",function(x)
     playback:rate(x)
   end)

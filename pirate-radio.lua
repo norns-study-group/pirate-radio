@@ -138,7 +138,6 @@ function debouncer_timer_init()
   debouncetimer=metro.init(function()
     if not inited then
       inited=true
-      pages.index=5 -- DEBUG
       weather.init()
       sync:download()
       dust2dust:send({message="need-sync"})
