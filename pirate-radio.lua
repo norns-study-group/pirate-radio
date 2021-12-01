@@ -38,6 +38,7 @@ function init()
   sync.init()
 
   radio.init()
+  playback.init()
   redraw_timer_init()
   debouncer_timer_init()
 
@@ -137,6 +138,7 @@ function debouncer_timer_init()
   debouncetimer=metro.init(function()
     if not inited then
       inited=true
+      pages.index=5 -- DEBUG
       weather.init()
       sync:download()
       dust2dust:send({message="need-sync"})
@@ -152,5 +154,6 @@ function cleanup ()
   -- redrawtimer.free_all()
   dust2dust:stop()
   norns.system_cmd(_path.code.."pirate-radio/supercollider/classes/stopogg.sh &")
+  playback:reroute_audio(false)
   -- add more cleanup code
 end
