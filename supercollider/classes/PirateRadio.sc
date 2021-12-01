@@ -234,6 +234,12 @@ PirateRadio {
 		streamPlayers[i].setBand(band,bandwidth);
 	}
 
+	// setCrossfade will change the crossfade time (default 20 seconds)
+	setCrossfade {
+		arg i, xfade;
+		streamPlayers[i].setCrossfade(i,xfade);
+	}
+
 	addFile {
 		arg i,fname;
 		streamPlayers[i].addFile(fname);
@@ -266,11 +272,13 @@ PirateRadio {
 
 		effects.free;
 		selector.free;
+		dial.free;
 		noise.free;
 		streamPlayers.do({ arg player; player.free; });
 
 		totalStrengthBus.free;
 		spectrumAnalysisBus.free;
+		dialBus.free;
 		outputBus.free;
 		noiseBus.free;
 		streamBusses.do({ arg bus; bus.free; });
@@ -352,7 +360,7 @@ PradStreamPlayer {
 		inDialBus=inDialBusArg;
 		filePaths=List();
 		swap = 0;
-		crossfade=20;
+		crossfade=10;
 		fileIndexCurrent=(-1);
 		fileCurrentPos=0;
 		fileScheduler=0;
@@ -525,6 +533,11 @@ PradStreamPlayer {
 		synths.do({ arg synth; synth.set(\ba, band,\bw,bandwidth); });
 	}
 
+	setCrossfade {
+		arg xfade;
+		crossfade=xfade;
+	}
+
 	// setFilePaths will configure the indicies allowed to play through
 	addFile {
 		arg fname;
@@ -633,16 +646,16 @@ PradEffects {
 	      		snd = In.ar(bus, 2);
 
 			// 10-band equalizer
-			snd = BPeakEQ.ar(snd,60,db:band1);
-			snd = BPeakEQ.ar(snd,170,db:band2);
-			snd = BPeakEQ.ar(snd,310,db:band3);
-			snd = BPeakEQ.ar(snd,600,db:band4);
-			snd = BPeakEQ.ar(snd,1000,db:band5);
-			snd = BPeakEQ.ar(snd,3000,db:band6);
-			snd = BPeakEQ.ar(snd,6000,db:band7);
-			snd = BPeakEQ.ar(snd,12000,db:band8);
-			snd = BPeakEQ.ar(snd,14000,db:band9);
-			snd = BPeakEQ.ar(snd,16000,db:band10);
+			snd = BPeakEQ.ar(snd,60,db:Lag.kr(band1));
+			snd = BPeakEQ.ar(snd,170,db:Lag.kr(band2));
+			snd = BPeakEQ.ar(snd,310,db:Lag.kr(band3));
+			snd = BPeakEQ.ar(snd,600,db:Lag.kr(band4));
+			snd = BPeakEQ.ar(snd,1000,db:Lag.kr(band5));
+			snd = BPeakEQ.ar(snd,3000,db:Lag.kr(band6));
+			snd = BPeakEQ.ar(snd,6000,db:Lag.kr(band7));
+			snd = BPeakEQ.ar(snd,12000,db:Lag.kr(band8));
+			snd = BPeakEQ.ar(snd,14000,db:Lag.kr(band9));
+			snd = BPeakEQ.ar(snd,16000,db:Lag.kr(band10));
 
 			////////////////
 			// snd = DelayC.ar(snd, delaytime:LFNoise2.kr(chorusRate).linlin(-1,1, 0.01, 0.06));
@@ -653,6 +666,7 @@ PradEffects {
 			
 
       // granulator
+	  		effect_granulator=Lag.kr(effect_granulator,0.2);
 			grnBuf1 = Buffer.alloc(server,server.sampleRate*1);
 			snd = (snd*(1-effect_granulator))+
 				(effect_granulator*GrainIn.ar(
@@ -664,6 +678,7 @@ PradEffects {
 			));
 
 			// delay
+			effect_delay=Lag.kr(effect_delay,0.2);
       		combBuf1 = Buffer.alloc(server,48000,2);
       		snd = (snd*(1-effect_delay))+(effect_delay*BufCombC.ar(combBuf1,snd,effect_delaytime,effect_delaydecaytime,effect_delaymul));
 

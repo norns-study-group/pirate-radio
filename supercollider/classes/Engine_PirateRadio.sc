@@ -70,6 +70,13 @@ Engine_PirateRadio : CroneEngine {
 			});
 		});
 
+		this.addCommand(\setCrossfade, "if", {
+			arg msg;
+			if (radio.notNil,{
+				radio.setCrossfade(msg[1],msg[2]);
+			});
+		});
+
 		this.addCommand(\getEngineState, "", {
 			arg msg;
 			if (radio.notNil,{

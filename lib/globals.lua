@@ -33,6 +33,13 @@ function fn.set_screen_dirty()
     screen_dirty = true
 end
 
+function fn.dump_json(fname,data)
+  local f=io.open(fname,"w+")
+  io.output(f)
+  io.write(json.encode(data))
+  io.close(f)
+end
+
 function fn.load_json(fname)
   if not util.file_exists(fname) then
     do return end
@@ -59,8 +66,6 @@ function fn.path_split(filename)
   return pathname,fname,ext
 end
 
-fn.audio_metadata_cache={}
-
 function fn.audio_metadata(fname)
   -- meta data is of the form
   -- TAG:encoder=Lavc58.54.100 libvorbis
@@ -69,8 +74,14 @@ function fn.audio_metadata(fname)
   -- TAG:metaotherinfo=''
   -- TAG:metafile='DNITA_vocal_phrase_all_the_time_dry_80_Ab_bpm80.wav'
   -- TAG:metabpm='112.96'
-  if fn.audio_metadata_cache[fname]~=nil then
-    return fn.audio_metadata_cache[fname]
+  _, filename_base, _ = fn.path_split(fname)
+  local metadata_file = _path.data.."pirate-radio/metadata"
+  if not util.file_exists(metadata_file) then 
+    os.execute("mkdir -p "..metadata_file)
+  end
+  metadata_file=metadata_file.."/"..filename_base..".json"
+  if util.file_exists(metadata_file) then
+    return fn.load_json(metadata_file)
   end
   local metadata={}
   local tempfile="/tmp/tmp"..math.random()
@@ -98,7 +109,7 @@ function fn.audio_metadata(fname)
           metadata[string.lower(k)]=v
       end
   end
-  fn.audio_metadata_cache[fname]=metadata
+  fn.dump_json(metadata_file,metadata)
   return metadata
 end
 

@@ -15,12 +15,10 @@ function sync:download(force)
   sync.downloaded=true
   -- run async
   clock.run(function()
-    local files=sync:download_()
-    print("sync: have "..#files.." files downloaded")
-    if #files>2 then 
-      -- send message to sync with other norns
-      radio.create_playlists_from_pirate_radio()
-    end
+    print("sync:download - downloading...")
+    sync:download_()
+    print("sync:download - creating playlist for radio")
+    radio.create_playlists_from_pirate_radio()
   end)
 end
 
@@ -32,7 +30,7 @@ function sync:download_()
   for word in files:gmatch("%S+") do
     file_list[word]=true
   end
-  local dl=util.os_capture("curl -k "..self.server.."/uploads")
+  local dl=util.os_capture("curl -m 5 -k "..self.server.."/uploads")
   print("sync: "..dl)
 
   local server_list={}

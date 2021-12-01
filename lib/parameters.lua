@@ -124,7 +124,19 @@ parameters.add_params = function()
   params:set_action("grain_duration", parameters.grain_duration_func)
 
   -- add eq params
-  params:add_group("eq",#eq.bands.sliders)
+  params:add_group("eq",#eq.bands.sliders+1)
+  local eq_preset_data=fn.load_json(_path.code.."pirate-radio/lib/eq_defaults.json")
+  local eq_preset_names={}
+  for _,v in ipairs(eq_preset_data) do 
+    table.insert(eq_preset_names,v.name)
+  end
+  parameters.eq_names=eq_preset_names
+  params:add_option("eq_preset","preset",eq_preset_names)
+  params:set_action("eq_preset",function(v)
+    for eq_i,eq_val in ipairs(eq_preset_data[v].eq) do 
+      params:set("eq"..eq_i,eq_val)
+    end
+  end)
   for i=1,#eq.bands.sliders,1 do
     local minmax = eq.bands.sliders[i]:get_minmax_values()
     local spec = cs.def{
@@ -154,6 +166,10 @@ parameters.add_params = function()
             eq:set_band_rel(i,math.floor(eq_val_delta), true)
           else
             eq.updating_from_ui[i] = false
+          end
+          -- if custom eq, then save it
+          if params:get("eq_preset")==1 then 
+            eq_preset_data[1].eq[i]=-1*val
           end
         end
       end
