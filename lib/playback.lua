@@ -25,7 +25,7 @@ function playback.init()
 
   -- init parameters
   -- TODO: put a separator or a group or something
-  params:add_separator("playback")
+  params:add_group("playback",4)
   params:add_control("playback_rate","rate",controlspec.new(-1,1,'lin',0.05,1,'s',0.05/2))
   params:set_action("playback_rate",function(x)
     playback:rate(x)
@@ -65,7 +65,7 @@ function playback.init()
 end
 
 function playback:reroute_audio(startup)
-  if startup then 
+  if startup then
     -- disable default SuperCollider output (SuperCollider -> crone -> softcut)
     -- because crone also goes to output
     os.execute("jack_disconnect crone:input_5 SuperCollider:out_1")
@@ -157,7 +157,8 @@ function playback:init_softcut()
   softcut.poll_start_phase()
   self.tt[1]=self:ct()
   self.tt_start_beats=self.tt[1]
-  self.tt_start_time=os.time()
+  -- set according to local time zone
+  self.tt_start_time=os.time({year=os.date("%Y"), month=os.date("%m"), day=os.date("%d"), hour=os.date("%H"), min=os.date("%M"),sec=os.date("%S")})
 end
 
 function playback:ct()
@@ -291,16 +292,19 @@ function playback:redraw()
     screen.font_face(40)
     screen.move(10,10)
     screen.font_size(12)
-    screen.text(os.date('%B %d',mtt))
-    screen.move(10,30)
+    screen.text(os.date('%A, %b %d',mtt))
+    screen.move(10,30+2)
     local ss=string.format("%.2f",tt-mtt)
     ss=ss:sub(2)
     screen.level(15)
     screen.font_face(5)
     screen.font_size(22)
     screen.text(os.date('%I:%M:%S',mtt))
+    screen.font_size(10)
+    screen.move(127,30+2)
+    screen.text_right(string.lower(os.date("%p")))
     screen.font_size(12)
-    screen.move(93,23)
+    screen.move(93,23+2)
     screen.text(ss)
   end
   screen.font_size(8)
