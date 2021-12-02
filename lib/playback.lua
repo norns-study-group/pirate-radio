@@ -10,6 +10,7 @@ local playback={
   position_changed=false,
   do_loop=0,
   go_loop=0,
+  live_sign=10,
 }
 
 function playback.init()
@@ -292,8 +293,8 @@ function playback:redraw()
     screen.font_face(40)
     screen.move(10,10)
     screen.font_size(12)
-    screen.text(os.date('%A, %b %d',mtt))
-    screen.move(10,30+2)
+    screen.text(os.date('%a, %b %d',mtt))
+    screen.move(10,30+3)
     local ss=string.format("%.2f",tt-mtt)
     ss=ss:sub(2)
     screen.level(15)
@@ -301,14 +302,27 @@ function playback:redraw()
     screen.font_size(22)
     screen.text(os.date('%I:%M:%S',mtt))
     screen.font_size(10)
-    screen.move(127,30+2)
+    screen.move(127,30+3)
     screen.text_right(string.lower(os.date("%p")))
     screen.font_size(12)
-    screen.move(93,23+2)
+    screen.move(93,23+3)
     screen.text(ss)
   end
-  screen.font_size(8)
-  screen.font_face(1)
+
+  if math.abs(playback.rec-playback.current)<1.3 then
+    screen.font_size(8)
+    screen.font_face(1)
+    screen.level(10)
+    screen.rect(105-16,2,21,11)
+    screen.stroke()
+    screen.move(105+2-16,2+7)
+    self.live_sign=self.live_sign-1 
+    if self.live_sign<-10 then 
+      self.live_sign=15
+    end
+    screen.level(self.live_sign>0 and 10 or 5)
+    screen.text("LIVE")
+  end
 end
 
 function playback:get_time_from_position(position)
