@@ -11,6 +11,7 @@ local playback={
   do_loop=0,
   go_loop=0,
   live_sign=10,
+  time_ahead=0.2,
 }
 
 function playback.init()
@@ -187,7 +188,7 @@ end
 function playback:frontier()
   self.position_changed=false
   self:loop(0,self.seconds_max)
-  self:pos(self.rec-1)
+  self:pos(self.rec-self.time_ahead)
 end
 
 function playback:pos(pos)
@@ -275,12 +276,14 @@ function playback:redraw()
     end
   elseif self.position_changed==true then
     tt,mtt=self:get_time_from_position(params:get("playback_position"))
-    local ss=string.format("%.2f",tt-mtt)
-    screen.level(5)
-    screen.font_face(1)
-    screen.font_size(8)
-    screen.move(10,50)
-    screen.text(os.date('%I:%M:%S',mtt)..ss:sub(2))
+    if tt~=nil and mtt~=nil then 
+      local ss=string.format("%.2f",tt-mtt)
+      screen.level(5)
+      screen.font_face(1)
+      screen.font_size(8)
+      screen.move(10,50)
+      screen.text(os.date('%I:%M:%S',mtt)..ss:sub(2))
+    end
   end
 
   local current=self.current
@@ -309,9 +312,9 @@ function playback:redraw()
     screen.text(ss)
   end
 
-  if math.abs(playback.rec-playback.current)<1.3 then
-    screen.font_size(8)
-    screen.font_face(1)
+  screen.font_size(8)
+  screen.font_face(1)
+  if math.abs(playback.rec-playback.current)<(self.time_ahead+0.5) then
     screen.level(10)
     screen.rect(105-16,2,21,11)
     screen.stroke()
@@ -326,9 +329,9 @@ function playback:redraw()
 end
 
 function playback:get_time_from_position(position)
-  local m=self.tt[math.floor(position)+1]
+  local m=self.tt[math.floor(position)]
   local f=position-math.floor(position)
-  local n=self.tt[math.floor(position)+2]
+  local n=self.tt[math.floor(position)+1]
   if n==nil then
     n=m+1
   end
