@@ -94,7 +94,13 @@ function tuner:redraw()
   local signal_strength = oscin.get_signal_strength()
   -- noize_meter.set_ceiling(math.floor(util.linexp(0,1,1,40,signal_strength))) -- signal strength
   noize_meter.set_ceiling(math.floor(util.explin(1,2,1,40,2-signal_strength))) -- noize strength
-  noize_meter.redraw(100, 50)
+  local curr_freq_decimal = params:get("tuner") % 1
+  print(curr_freq_decimal)
+  if curr_freq_decimal >= 0.1 and curr_freq_decimal < 0.2 then
+    noize_meter.redraw(111, 38)
+  else
+    noize_meter.redraw(104, 38)
+  end
 
   -- draw the ui here
   for i=1,#tuner.components,1 do
