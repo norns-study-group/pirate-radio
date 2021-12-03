@@ -123,6 +123,10 @@ function redraw_timer_init()
       menu_activated = true
     end
     frame_counter = frame_counter+1
+    local playback_rate = params:get("playback_rate")
+    if playback_rate ~= nil then
+      rel_frame_counter = rel_frame_counter + playback_rate
+    end
   end,SCREEN_FRAMERATE,-1)
   redrawtimer:start()
 end
