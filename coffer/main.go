@@ -19,6 +19,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	log "github.com/schollz/logger"
@@ -27,7 +28,9 @@ import (
 const MaxBytesPerFile = 2000000000 // 2 GB
 const ContentDirectory = "uploads"
 
+var commentsDB []Comment
 var indexHTML []byte
+var mu sync.Mutex
 
 type MetadataInfo struct {
 	File         string
@@ -39,12 +42,25 @@ type MetadataInfo struct {
 	Date         string
 }
 
+type Comment struct {
+	Filename string    `json:"filename"`
+	Commment string    `json:"comment"`
+	Date     time.Time `json:"date"`
+}
+
 var metadataSaved map[string]MetadataInfo
 
 func main() {
 	port := 8730
 	metadataSaved = make(map[string]MetadataInfo)
 	os.MkdirAll(ContentDirectory, 0644)
+
+	go func() {
+		b, err := ioutil.ReadFile(path.Join(ContentDirectory, "comments.json"))
+		if err == nil {
+			json.Unmarshal(b, &commentsDB)
+		}
+	}()
 	log.SetLevel("debug")
 	log.Infof("listening on :%d", port)
 	r := http.NewServeMux()
@@ -79,6 +95,9 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 	} else if r.URL.Path == "/uploads" {
 		// return a list of files
 		return handleListUploads(w, r)
+	} else if r.URL.Path == "/comment" {
+		// store the comment
+		return handleComment(w, r)
 	} else if r.URL.Path == "/uploads2" {
 		// return a list of files
 		return handleListUploadsWithMetadata(w, r)
@@ -103,10 +122,62 @@ func handle(w http.ResponseWriter, r *http.Request) (err error) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(b)
+	} else if strings.HasPrefix(r.URL.Path, "/comments.json") {
+		var b []byte
+		b, err = json.Marshal(commentsDB)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(b)
 	} else {
 		w.Write([]byte("ok"))
 	}
 
+	return
+}
+
+func handleComment(w http.ResponseWriter, r *http.Request) (err error) {
+	decoder := json.NewDecoder(r.Body)
+
+	var c Comment
+	err = decoder.Decode(&c)
+
+	if err != nil {
+		return
+	}
+	c.Date = time.Now()
+
+	log.Debugf("got comment: %+v", c)
+
+	allowedFilenames := getUploads()
+	isOk := false
+	for _, fname := range allowedFilenames {
+		if fname == c.Filename {
+			isOk = true
+			break
+		}
+	}
+	if !isOk {
+		log.Debugf("no such filename for comment: %s", c.Filename)
+		w.Write([]byte("no filename"))
+		return
+	}
+
+	commentsDB = append(commentsDB, c)
+
+	go func() {
+		mu.Lock()
+		defer mu.Unlock()
+		b, e := json.Marshal(commentsDB)
+		if e != nil {
+			log.Error(e)
+		}
+		ioutil.WriteFile(path.Join(ContentDirectory, "comments.json"), b, 0644)
+	}()
+
+	w.Write([]byte("ok"))
 	return
 }
 
@@ -322,12 +393,20 @@ func getFileContents(fname string) (s string, err error) {
 	return
 }
 
-func handleListUploads(w http.ResponseWriter, r *http.Request) (err error) {
+func getUploads() []string {
 	fileList, err := filepath.Glob("uploads/*.ogg")
+	if err != nil {
+		panic(err)
+	}
 	// strip prefix
 	for i, f := range fileList {
 		fileList[i] = filepath.Base(f)
 	}
+	return fileList
+}
+
+func handleListUploads(w http.ResponseWriter, r *http.Request) (err error) {
+	fileList := getUploads()
 	if err == nil {
 		jsonResponse(w, http.StatusOK, map[string][]string{"uploads": fileList})
 	}
