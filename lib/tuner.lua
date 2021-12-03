@@ -92,7 +92,8 @@ end
 
 function tuner:redraw()
   local signal_strength = oscin.get_signal_strength()
-  noize_meter.set_ceiling(math.floor(util.linexp(0,1,1,40,signal_strength)))
+  -- noize_meter.set_ceiling(math.floor(util.linexp(0,1,1,40,signal_strength))) -- signal strength
+  noize_meter.set_ceiling(math.floor(util.explin(1,2,1,40,2-signal_strength))) -- noize strength
   noize_meter.redraw(100, 50)
 
   -- draw the ui here
