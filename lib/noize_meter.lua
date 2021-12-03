@@ -32,16 +32,16 @@ end
 -- static conf
 
 local nb_gons = 5 -- nb of polygons
-  local nb_points = 14 -- nb of points / polygon
-  local g_levels = {10, 1, 15, 4, 12, 7, 5, 8} -- levels of each polygon, by index
+local nb_points = 14 -- nb of points / polygon
+local g_levels = {10, 1, 15, 4, 12, 7, 5, 8} -- levels of each polygon, by index
 
-  local warp_contraint_attemps = 3
+local warp_contraint_attemps = 3
 
 
-  -- ------------------------------------------------------------------------
-  -- core helpers
+-- ------------------------------------------------------------------------
+-- core helpers
 
-  function rnd(x)
+function rnd(x)
   if x == 0 then
     return 0
   end
