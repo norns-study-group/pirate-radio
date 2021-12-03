@@ -31,6 +31,7 @@ function init()
 
   prereqs.install()
   tuner.init()
+  noize_meter.init()
   eq.init()
   oscin.init()
   -- dust2dust needs to be defined after oscin
@@ -39,7 +40,6 @@ function init()
 
   radio.init()
   playback.init()
-  redraw_timer_init()
   debouncer_timer_init()
 
   init_midi_16n()
@@ -51,6 +51,8 @@ function init()
 
   -- define the global marquee for the lower right banner
   marquee=Marquee:new()
+
+  redraw_timer_init()
 
   initializing = false
 end
@@ -124,10 +126,7 @@ function redraw_timer_init()
     end
     playback:update_state()
     frame_counter = frame_counter+1
-    local playback_rate = params:get("playback_rate")
-    if playback_rate ~= nil then
-      rel_frame_counter = rel_frame_counter + playback_rate
-    end
+    rel_frame_counter = rel_frame_counter + params:get("playback_rate")
   end,SCREEN_FRAMERATE,-1)
   redrawtimer:start()
 end
@@ -156,6 +155,7 @@ end
 
 function cleanup ()
   -- redrawtimer.free_all()
+  noize_meter.cleanup()
   dust2dust:stop()
   norns.system_cmd(_path.code.."pirate-radio/supercollider/classes/stopogg.sh &")
   playback:reroute_audio(false)

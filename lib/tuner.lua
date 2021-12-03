@@ -67,16 +67,7 @@ function tuner:set_dial_brightness()
   -- print("tuner_brightness",level)
 end
 
-function tuner:redraw()
-  -- draw the ui here
-  for i=1,#tuner.components,1 do
-    tuner.components[i]:redraw()
-  end
-  screen.move(120,40)
-  screen.level(math.floor(util.linexp(0,1,2,15.9,oscin.get_signal_strength())))
-  screen.font_size(24)
-  screen.text_right(string.format("%2.1f",params:get("tuner")))
-  screen.font_size(8)
+local function station_image_redraw()
   if current_station_image_list_len~=nil then
     -- animation
     local frame_id = math.floor(rel_frame_counter * SCREEN_FRAMERATE * (1 / animation_framerate) + 0.5)
@@ -86,10 +77,10 @@ function tuner:redraw()
       if image_id > current_station_image_list_len then
         image_id = (current_station_image_list_len*2) - image_id + 1
       end
-  else
-    image_id = frame_id%current_station_image_list_len+1
-  end
-  screen.display_png(current_station_image_dir..current_station_image_list[image_id],4,22)
+    else
+      image_id = frame_id%current_station_image_list_len+1
+    end
+    screen.display_png(current_station_image_dir..current_station_image_list[image_id],4,22)
 
   elseif current_station_image~=nil and current_station_image~="" then
     -- still image
@@ -97,6 +88,30 @@ function tuner:redraw()
       screen.display_png(current_station_image,4,22)
     end
   end
+end
+
+function tuner:redraw()
+  local signal_strength = oscin.get_signal_strength()
+  -- noize_meter.set_ceiling(math.floor(util.linexp(0,1,1,40,signal_strength))) -- signal strength
+  noize_meter.set_ceiling(math.floor(util.explin(1,2,1,40,2-signal_strength))) -- noize strength
+  local curr_freq_decimal = params:get("tuner") % 1
+  print(curr_freq_decimal)
+  if curr_freq_decimal >= 0.1 and curr_freq_decimal < 0.2 then
+    noize_meter.redraw(111, 38)
+  else
+    noize_meter.redraw(104, 38)
+  end
+
+  -- draw the ui here
+  for i=1,#tuner.components,1 do
+    tuner.components[i]:redraw()
+  end
+  screen.move(120,40)
+  screen.level(math.floor(util.linexp(0,1,2,15.9,signal_strength)))
+  screen.font_size(24)
+  screen.text_right(string.format("%2.1f",params:get("tuner")))
+  screen.font_size(8)
+  station_image_redraw()
 end
 
 return tuner

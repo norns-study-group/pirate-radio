@@ -22,6 +22,7 @@ pirate_radio_pages = include "pirate-radio/lib/pirate_radio_pages"
 
 parameters = include "pirate-radio/lib/parameters"
 tuner = include "pirate-radio/lib/tuner"
+noize_meter = include "pirate-radio/lib/noize_meter"
 eq = include "pirate-radio/lib/eq"
 _16n = include "pirate-radio/lib/16n"
 visualizer = include "pirate-radio/lib/visualizer"
