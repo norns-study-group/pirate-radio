@@ -122,6 +122,7 @@ function redraw_timer_init()
     elseif menu_status==true and menu_activated == false then
       menu_activated = true
     end
+    playback:update_state()
     frame_counter = frame_counter+1
   end,SCREEN_FRAMERATE,-1)
   redrawtimer:start()

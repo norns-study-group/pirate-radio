@@ -11,7 +11,7 @@ local playback={
   do_loop=0,
   go_loop=0,
   live_sign=10,
-  time_ahead=0.2,
+  time_ahead=0.1,
 }
 
 function playback.init()
@@ -26,7 +26,6 @@ function playback.init()
   playback:init_softcut()
 
   -- init parameters
-  -- TODO: put a separator or a group or something
   params:add_group("playback",4)
   params:add_control("playback_rate","rate",controlspec.new(-1,1,'lin',0.05,1,'s',0.05/2))
   params:set_action("playback_rate",function(x)
@@ -145,10 +144,15 @@ function playback:init_softcut()
     softcut.pre_filter_rq(i,1.0)
     softcut.pre_filter_fc(i,20000)
   end
+  local done_init=false
   softcut.event_phase(function(voice,position)
     if voice==3 then
       self.tt[math.floor(position)+1]=self:ct()
       self.rec=position
+      if not done_init and self.rec>self.time_ahead then 
+        done_init=true
+	self:frontier()
+      end
     elseif voice==1 then
       self.current=position
       if self.update==0 and not self.position_changed then
@@ -186,6 +190,7 @@ function playback:update_state()
 end
 
 function playback:frontier()
+  print("playback:frontier()")
   self.position_changed=false
   self:loop(0,self.seconds_max)
   self:pos(self.rec-self.time_ahead)
@@ -252,7 +257,6 @@ function playback:in_loop()
 end
 
 function playback:redraw()
-  self:update_state()
   if self.do_loop>0 then
     screen.display_png(_path.code.."pirate-radio/art/loop"..self.do_loop..".png",115,0)
     if self.do_loop==1 then
