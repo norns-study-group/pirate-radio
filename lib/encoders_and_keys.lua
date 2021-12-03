@@ -19,7 +19,8 @@ local enc = function (n, delta)
     elseif pages.index == 4 then
 
     elseif pages.index == 5 then
-
+      -- playback
+      playback:change_rate(delta)
     end
   elseif n == 3 then 
     if pages.index == 1 then
@@ -35,7 +36,8 @@ local enc = function (n, delta)
     elseif pages.index == 4 then
 
     elseif pages.index == 5 then
-
+      -- playback
+      playback:change_pos(delta)
     end
   end
   screen_dirty = true
@@ -80,7 +82,7 @@ local key = function (n,z)
     elseif(pages.index == 4) then
 
     elseif(pages.index == 5) then
-            
+      playback:toggle_loop()
     end
   elseif (n == 3 and z == 1)  then 
     if pages.index == 1 then
@@ -92,7 +94,7 @@ local key = function (n,z)
     elseif(pages.index == 4) then
 
     elseif(pages.index == 5) then
-            
+      playback:frontier()            
     end
   end
   screen_dirty = true

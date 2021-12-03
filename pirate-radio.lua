@@ -38,6 +38,7 @@ function init()
   sync.init()
 
   radio.init()
+  playback.init()
   redraw_timer_init()
   debouncer_timer_init()
 
@@ -121,6 +122,7 @@ function redraw_timer_init()
     elseif menu_status==true and menu_activated == false then
       menu_activated = true
     end
+    playback:update_state()
     frame_counter = frame_counter+1
   end,SCREEN_FRAMERATE,-1)
   redrawtimer:start()
@@ -140,6 +142,7 @@ function debouncer_timer_init()
       weather.init()
       sync:download()
       dust2dust:send({message="need-sync"})
+      comments.init()
     end
     screen_dirty = true
   end,1,-1)
@@ -151,5 +154,6 @@ function cleanup ()
   -- redrawtimer.free_all()
   dust2dust:stop()
   norns.system_cmd(_path.code.."pirate-radio/supercollider/classes/stopogg.sh &")
+  playback:reroute_audio(false)
   -- add more cleanup code
 end

@@ -37,9 +37,9 @@ local update_pages = function()
     elseif pages.index == 3 then
       visualizer:redraw()
     elseif pages.index == 4 then
-      
+      comments:redraw()
     elseif pages.index == 5 then
-      
+      playback:redraw()
     end
 
     local menu_status = norns.menu.status()

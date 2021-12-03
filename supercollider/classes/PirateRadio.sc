@@ -165,7 +165,7 @@ PirateRadio {
 		    (0..9).do({ arg i;
 				Out.kr(specBus+i,Lag.kr(Clip.kr(LinLin.kr(array[i].ampdb,-96,96,0,1)),2));
 		    });
-			Out.ar(0, snd);
+			Out.ar(0, snd/2);
 		}.play(target:server, args:[\in, outputBus.index,\specBus,spectrumAnalysisBus.index], addAction:\addToTail);
 
 		// send periodic information to norns
