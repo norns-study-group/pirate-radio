@@ -79,7 +79,7 @@ function tuner:redraw()
   screen.font_size(8)
   if current_station_image_list_len~=nil then
     -- animation
-    local frame_id = math.floor(frame_counter * SCREEN_FRAMERATE * (1 / animation_framerate) + 0.5)
+    local frame_id = math.floor(rel_frame_counter * SCREEN_FRAMERATE * (1 / animation_framerate) + 0.5)
     local image_id
     if animation_mode == "ping-pong" then
       image_id = frame_id%(current_station_image_list_len*2) + 1

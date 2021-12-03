@@ -142,6 +142,7 @@ end
 -------------------------------------------
 SCREEN_FRAMERATE = 1/7
 frame_counter = 0
+rel_frame_counter = 0
 SCREEN_SIZE = {x=127,y=64}
 NUM_PAGES = 5
 
