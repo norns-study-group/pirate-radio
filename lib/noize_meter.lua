@@ -5,7 +5,7 @@ local noize_meter = {}
 -- ------------------------------------------------------------------------
 -- state - clocks
 
-local rot_fps = 60
+local rot_fps = 14
 local rot_clock
 local warp_fps = 20
 local warp_clock
