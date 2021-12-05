@@ -31,7 +31,7 @@ function init()
 
   prereqs.install()
   tuner.init()
-  noize_meter.init()
+  magic_eye.init()
   eq.init()
   oscin.init()
   -- dust2dust needs to be defined after oscin
@@ -155,7 +155,7 @@ end
 
 function cleanup ()
   -- redrawtimer.free_all()
-  noize_meter.cleanup()
+  magic_eye.cleanup()
   dust2dust:stop()
   norns.system_cmd(_path.code.."pirate-radio/supercollider/classes/stopogg.sh &")
   playback:reroute_audio(false)

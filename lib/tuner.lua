@@ -92,14 +92,17 @@ end
 
 function tuner:redraw()
   local signal_strength = oscin.get_signal_strength()
-  -- noize_meter.set_ceiling(math.floor(util.linexp(0,1,1,40,signal_strength))) -- signal strength
-  noize_meter.set_ceiling(math.floor(util.explin(1,2,1,40,2-signal_strength))) -- noize strength
-  local curr_freq_decimal = params:get("tuner") % 1
-  print(curr_freq_decimal)
-  if curr_freq_decimal >= 0.1 and curr_freq_decimal < 0.2 then
-    noize_meter.redraw(111, 38)
+  local max_diameter = params:get("magic_eye_max_amp")
+  if params:string("magic_eye_mode") == "fold" then
+    magic_eye.set_ceiling(math.floor(util.explin(1,2,1,max_diameter/2,2-signal_strength)))
   else
-    noize_meter.redraw(104, 38)
+    magic_eye.set_ceiling(math.floor(util.linexp(0,1,1,max_diameter/2,signal_strength)))
+  end
+  local curr_freq_decimal = params:get("tuner") % 1
+  if curr_freq_decimal >= 0.1 and curr_freq_decimal < 0.2 then
+    magic_eye.redraw(111, 38)
+  else
+    magic_eye.redraw(104, 38)
   end
 
   -- draw the ui here

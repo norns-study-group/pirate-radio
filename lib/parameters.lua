@@ -3,9 +3,9 @@
 ------------------------------
 -- notes and todo lsit
 --
--- note: 
+-- note:
 --
--- todo list: 
+-- todo list:
 ------------------------------
 
 parameters = {}
@@ -21,6 +21,35 @@ parameters.specs = {
     quantum=0.001,
     wrap=true,
     -- units='khz'
+  },
+  MAGIC_EYE_MAX_DIAMETER = cs.def{
+    min=15,
+    max=80,
+    -- warp='lin',
+    step=0.1,
+    default = 80,
+    -- wrap=true,
+    -- units='khz'
+  },
+  MAGIC_EYE_WARP_CONVERGE_ATTEMPTS = cs.def{
+    min=1,
+    max=7,
+    -- warp='lin',
+    step=1,
+    quantum=1,
+    default = 3,
+    -- wrap=true,
+    -- units='khz'
+  },
+  MAGIC_EYE_WARP_SLIP_THROUGH_PERCENT = cs.def{
+    min=0,
+    max=100,
+    -- warp='lin',
+    step=1,
+    quantum=1,
+    default = 1,
+    -- wrap=true,
+    units='%'
   },
   DECAY_TIME = cs.def{
     min=0.1,
@@ -85,6 +114,14 @@ function parameters.tuner_func()
   end
 end
 
+function parameters.magic_eye_sensitivity_func(val)
+  magic_eye.set_warp_max_constraint_attemps(val)
+end
+
+function parameters.magic_eye_noiziness_func(val)
+  magic_eye.set_warp_slipthrough_percent(val)
+end
+
 function parameters.delay_func(val)
   engine.fxParam("effect_delay", val)
 end
@@ -108,9 +145,18 @@ end
 parameters.add_params = function()
 
   local specs = parameters.specs
-  
+
   params:add_control("tuner","tuner",specs.TUNER)
   params:set_action("tuner", parameters.tuner_func)
+
+  params:add_group("magic eye", 4)
+  params:add_option("magic_eye_mode", "mode", {"fold", "expand"})
+  params:add_control("magic_eye_max_amp", "max_amp", specs.MAGIC_EYE_MAX_DIAMETER)
+  params:add_control("magic_eye_sensitivity", "sensitivity", specs.MAGIC_EYE_WARP_CONVERGE_ATTEMPTS)
+  params:set_action("magic_eye_sensitivity", parameters.magic_eye_sensitivity_func)
+  params:add_control("magic_eye_noiziness", "noiziness", specs.MAGIC_EYE_WARP_SLIP_THROUGH_PERCENT)
+  params:set_action("magic_eye_noiziness", parameters.magic_eye_noiziness_func)
+
   params:add_separator("effects")
   params:add_control("delay", "delay")
   params:set_action("delay", parameters.delay_func)
@@ -127,13 +173,13 @@ parameters.add_params = function()
   params:add_group("eq",#eq.bands.sliders+1)
   local eq_preset_data=fn.load_json(_path.code.."pirate-radio/lib/eq_defaults.json")
   local eq_preset_names={}
-  for _,v in ipairs(eq_preset_data) do 
+  for _,v in ipairs(eq_preset_data) do
     table.insert(eq_preset_names,v.name)
   end
   parameters.eq_names=eq_preset_names
   params:add_option("eq_preset","preset",eq_preset_names)
   params:set_action("eq_preset",function(v)
-    for eq_i,eq_val in ipairs(eq_preset_data[v].eq) do 
+    for eq_i,eq_val in ipairs(eq_preset_data[v].eq) do
       params:set("eq"..eq_i,eq_val)
     end
   end)
@@ -148,16 +194,16 @@ parameters.add_params = function()
       wrap=false,
     }
     params:add{
-      type="control", 
-      id="eq"..i, 
-      name="eq"..i, 
-      controlspec=spec, 
+      type="control",
+      id="eq"..i,
+      name="eq"..i,
+      controlspec=spec,
       action=function(val)
         val = val*-1
         if initializing == false then
           local p_min = eq.bands.sliders[i].pointer_min
           local p_max = eq.bands.sliders[i].pointer_max
-          local eq_val_new = util.linlin(0,minmax.min+minmax.min+1,p_min,p_max,val+minmax.min) 
+          local eq_val_new = util.linlin(0,minmax.min+minmax.min+1,p_min,p_max,val+minmax.min)
           local current_pointer_loc = eq.bands.sliders[i].pointer_loc
           local eq_val_delta = (eq_val_new - current_pointer_loc)
           -- print("band,val,delta, eq_val_new, current_pointer_loc",i,val,eq_val_delta, eq_val_new, current_pointer_loc)
@@ -168,7 +214,7 @@ parameters.add_params = function()
             eq.updating_from_ui[i] = false
           end
           -- if custom eq, then save it
-          if params:get("eq_preset")==1 then 
+          if params:get("eq_preset")==1 then
             eq_preset_data[1].eq[i]=-1*val
           end
         end
