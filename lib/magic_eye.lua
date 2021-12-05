@@ -1,5 +1,5 @@
 
-local noize_meter = {}
+local magic_eye = {}
 
 
 -- ------------------------------------------------------------------------
@@ -22,9 +22,19 @@ local angle_shift = 0
 -- warp
 local init_v = 20
 local max_v = 25
+local warp_contraint_attemps = 3
+local warp_slipthrough_percent = 1
 
-function noize_meter.set_ceiling(v)
+function magic_eye.set_ceiling(v)
   max_v = v
+end
+
+function magic_eye.set_warp_max_constraint_attemps(v)
+  warp_contraint_attemps = v
+end
+
+function magic_eye.set_warp_slipthrough_percent(v)
+  warp_slipthrough_percent = v
 end
 
 
@@ -35,7 +45,6 @@ local nb_gons = 5 -- nb of polygons
 local nb_points = 14 -- nb of points / polygon
 local g_levels = {10, 1, 15, 4, 12, 7, 5, 8} -- levels of each polygon, by index
 
-local warp_contraint_attemps = 3
 
 
 -- ------------------------------------------------------------------------
@@ -98,7 +107,7 @@ end
 -- ------------------------------------------------------------------------
 -- init / cleanup
 
-function noize_meter.init()
+function magic_eye.init()
   for i=1,nb_gons do
     gons[i] = {}
     for p=1,nb_points do
@@ -106,11 +115,11 @@ function noize_meter.init()
     end
   end
 
-  rot_clock = clock.run(noize_meter.rot)
-  warp_clock = clock.run(noize_meter.warp)
+  rot_clock = clock.run(magic_eye.rot)
+  warp_clock = clock.run(magic_eye.warp)
 end
 
-function noize_meter.cleanup()
+function magic_eye.cleanup()
   clock.cancel(rot_clock)
   clock.cancel(warp_clock)
 end
@@ -119,7 +128,7 @@ end
 -- ------------------------------------------------------------------------
 -- clocked fns
 
-function noize_meter.rot()
+function magic_eye.rot()
   local step_s = 1 / rot_fps
   while true do
     clock.sleep(step_s)
@@ -127,7 +136,7 @@ function noize_meter.rot()
   end
 end
 
-function noize_meter.warp()
+function magic_eye.warp()
   local step_s = 1 / warp_fps
   while true do
     clock.sleep(step_s)
@@ -149,7 +158,7 @@ function noize_meter.warp()
         end
         -- final constraint
         if gons[i][p] >= max_v then
-          if rnd(100) < 99 then --let some though
+          if rnd(100) < (100 - warp_slipthrough_percent) then --let some slip though
             gons[i][p] = max_v + rnd(2) - 1 * rnd(math.floor(max_v/3)) * 2
           end
         end
@@ -158,9 +167,9 @@ function noize_meter.warp()
   end
 end
 
-function noize_meter.redraw(x, y)
+function magic_eye.redraw(x, y)
   for i=1,nb_gons do
-    noize_meter.draw_ngon(x, y, gons[i], angle_shift/100, g_levels[i])
+    magic_eye.draw_ngon(x, y, gons[i], angle_shift/100, g_levels[i])
   end
 end
 
@@ -168,7 +177,7 @@ end
 -- ------------------------------------------------------------------------
 -- draw
 
-function noize_meter.draw_ngon(x, y, gon, a, level)
+function magic_eye.draw_ngon(x, y, gon, a, level)
   screen.level(level)
   invalidate_current_line_endpoints()
 
@@ -189,4 +198,4 @@ end
 
 -- ------------------------------------------------------------------------
 
-return noize_meter
+return magic_eye
