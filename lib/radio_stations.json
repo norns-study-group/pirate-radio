@@ -25,6 +25,23 @@
     "animation_fps": 7
 },
 {
+    "band": 93.0,
+    "bandwidth":0.3,
+    "name": "toriigate",
+    "description": "solar punk",
+    "image": "/home/we/dust/code/pirate-radio/art/toriigate/",
+    "animation_fps": 7
+},
+{
+    "band": 93.5,
+    "bandwidth":0.3,
+    "name": "clacky",
+    "description": "brain dance",
+    "image": "/home/we/dust/code/pirate-radio/art/clacky/",
+    "animation_fps": 7
+},
+{
+
     "band": 94.7,
     "bandwidth":0.3,
     "name": "knrk",
