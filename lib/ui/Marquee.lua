@@ -71,8 +71,8 @@ function Marquee:update_playing_info(band)
     current_station_image_dir=nil
     current_station_image_list=nil
     current_station_image_list_len=nil
-    current_station_image_x_offset=nil
-    current_station_image_y_offset=nil
+    current_station_image_x_offset=0
+    current_station_image_y_offset=0
     animation_mode=nil
     animation_framerate=nil
     do return end
