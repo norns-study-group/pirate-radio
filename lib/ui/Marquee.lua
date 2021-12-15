@@ -71,6 +71,8 @@ function Marquee:update_playing_info(band)
     current_station_image_dir=nil
     current_station_image_list=nil
     current_station_image_list_len=nil
+    current_station_image_x_offset=nil
+    current_station_image_y_offset=nil
     animation_mode=nil
     animation_framerate=nil
     do return end
@@ -91,6 +93,14 @@ function Marquee:update_playing_info(band)
     animation_framerate=SCREEN_FRAMERATE
     if radio_stations[i].animation_fps ~= nil then
       animation_framerate=1/radio_stations[i].animation_fps
+    end
+    current_station_image_x_offset = radio_stations[i].x_offset
+    if current_station_image_x_offset == nil then
+      current_station_image_x_offset = 0
+    end
+    current_station_image_y_offset = radio_stations[i].y_offset
+    if current_station_image_y_offset == nil then
+      current_station_image_y_offset = 0
     end
   end
 end

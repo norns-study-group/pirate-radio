@@ -22,7 +22,9 @@
     "name": "yoyo",
     "description": "spins",
     "image": "/home/we/dust/code/pirate-radio/art/yoyo/",
-    "animation_fps": 7
+    "animation_fps": 7,
+    "x_offset": +3,
+    "y_offset": -3
 },
 {
     "band": 93.0,
@@ -54,7 +56,8 @@
     "name": "KWLN",
     "description": "KOWLOON WALLED CITY RADIO FREEDOM ABLEMUTH",
     "image": "/home/we/dust/code/pirate-radio/art/kowloon/",
-    "animation_fps": 7
+    "animation_fps": 7,
+    "y_offset": -3
 },
 {
     "band": 99.9,
@@ -63,7 +66,8 @@
     "description": "bouncy",
     "image": "/home/we/dust/code/pirate-radio/art/toaster/",
     "animation": "ping-pong",
-    "animation_fps": 7
+    "animation_fps": 7,
+    "x_offset": +5
 },
 {
     "band": 101.9,
@@ -72,7 +76,8 @@
     "description": "potted plant",
     "image": "/home/we/dust/code/pirate-radio/art/plant/",
     "animation": "ping-pong",
-    "animation_fps": 7
+    "animation_fps": 7,
+    "y_offset": +2
 },
 {
     "band": 104.2,
@@ -82,4 +87,13 @@
     "image": "/home/we/dust/code/pirate-radio/art/yurui/",
     "animation": "ping-pong",
     "animation_fps": 14
+},
+{
+    "band": 108.0,
+    "bandwidth":0.3,
+    "name": "caster",
+    "description": "drones",
+    "image": "/home/we/dust/code/pirate-radio/art/dronecaster/",
+    "animation_fps": 7,
+    "y_offset": -3
 }]

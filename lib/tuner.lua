@@ -80,12 +80,16 @@ local function station_image_redraw()
     else
       image_id = frame_id%current_station_image_list_len+1
     end
-    screen.display_png(current_station_image_dir..current_station_image_list[image_id],4,22)
+    screen.display_png(current_station_image_dir..current_station_image_list[image_id],
+                       4 + current_station_image_x_offset,
+                       22 + current_station_image_y_offset)
 
   elseif current_station_image~=nil and current_station_image~="" then
     -- still image
     if util.file_exists(current_station_image) then
-      screen.display_png(current_station_image,4,22)
+      screen.display_png(current_station_image,
+                         4 + current_station_image_x_offset,
+                         22 + current_station_image_y_offset)
     end
   end
 end

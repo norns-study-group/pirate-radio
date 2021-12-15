@@ -76,7 +76,7 @@ function fn.audio_metadata(fname)
   -- TAG:metabpm='112.96'
   _, filename_base, _ = fn.path_split(fname)
   local metadata_file = _path.data.."pirate-radio/metadata"
-  if not util.file_exists(metadata_file) then 
+  if not util.file_exists(metadata_file) then
     os.execute("mkdir -p "..metadata_file)
   end
   metadata_file=metadata_file.."/"..filename_base..".json"
@@ -169,5 +169,7 @@ current_station_image = nil
 current_station_image_dir=nil
 current_station_image_list=nil
 current_station_image_list_len=nil
+current_station_image_x_offset=nil
+current_station_image_y_offset=nil
 animation_mode=nil
 animation_framerate=nil
