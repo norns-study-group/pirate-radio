@@ -23,7 +23,7 @@
     "description": "spins",
     "image": "/home/we/dust/code/pirate-radio/art/yoyo/",
     "animation_fps": 7,
-    "x_offset": +3,
+    "x_offset": 3,
     "y_offset": -3
 },
 {
@@ -67,7 +67,7 @@
     "image": "/home/we/dust/code/pirate-radio/art/toaster/",
     "animation": "ping-pong",
     "animation_fps": 7,
-    "x_offset": +5
+    "x_offset": 5
 },
 {
     "band": 101.9,
@@ -77,7 +77,7 @@
     "image": "/home/we/dust/code/pirate-radio/art/plant/",
     "animation": "ping-pong",
     "animation_fps": 7,
-    "y_offset": +2
+    "y_offset": 2
 },
 {
     "band": 104.2,
