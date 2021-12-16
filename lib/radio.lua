@@ -101,6 +101,10 @@ function radio.create_playlists_from_sync(data)
         print("create_playlists_from_sync: no playlists")
         do return end 
     end
+    if #data.playlists<2 then 
+        print("create_playlists_from_sync: not enough playlists")
+        do return end 
+    end
     -- make sure files exists
     local all_files_exist=true
     for i,v in ipairs(data.playlists) do
