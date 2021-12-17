@@ -101,7 +101,8 @@ function radio.create_playlists_from_sync(data)
         print("create_playlists_from_sync: no playlists")
         do return end 
     end
-    if #data.playlists<2 then 
+    print("current playlists length: "..#radio.playlists.." / new playlists: "..#data.playlists)
+    if #data.playlists<#radio.playlists then 
         print("create_playlists_from_sync: not enough playlists")
         do return end 
     end
