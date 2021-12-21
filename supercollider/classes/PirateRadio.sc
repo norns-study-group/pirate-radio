@@ -266,6 +266,7 @@ PirateRadio {
 	// stop and free resources
 	free {
 		// by default i tend to free stuff in reverse order of alloctaion
+		SystemClock.clear;
 		sendRoutine.stop;
 		sendRoutine.free;
 		outputSynth.free;

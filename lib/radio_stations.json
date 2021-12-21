@@ -95,9 +95,7 @@
     "name": "aporee",
     "stream": "http://radio.aporee.org:8000/aporee_high",
     "description": "radio.aporee.org",
-    "image": "/home/we/dust/code/pirate-radio/art/yurui/",
-    "animation": "ping-pong",
-    "animation_fps": 14
+    "image": ""
 },
 {
     "band": 108.0,
