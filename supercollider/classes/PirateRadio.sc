@@ -285,6 +285,8 @@ PirateRadio {
 		strengthBusses.do({ arg bus; bus.free; });
 		oscTrigger.free;
 		"pkill -f ogg123".systemCmd;
+		"pkill -f lame".systemCmd;
+		"pkill -f curl".systemCmd;
 		"rm -rf /dev/shm/sc3mp3*".systemCmd;
 	}
 }
