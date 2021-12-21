@@ -1,7 +1,7 @@
 [
 {
     "band": 90.3,
-    "bandwidth":0.3,
+    "bandwidth": 0.3,
     "name": "weather",
     "description": "24/7 weather",
     "allow_uploads": false,
@@ -9,7 +9,7 @@
 },
 {
     "band": 91.7,
-    "bandwidth":0.3,
+    "bandwidth": 0.3,
     "name": "coffee time",
     "description": "breathe the fumes",
     "allow_uploads": false,
@@ -18,7 +18,7 @@
 },
 {
     "band": 92.5,
-    "bandwidth":0.3,
+    "bandwidth": 0.3,
     "name": "yoyo",
     "description": "spins",
     "image": "/home/we/dust/code/pirate-radio/art/yoyo/",
@@ -28,7 +28,7 @@
 },
 {
     "band": 93.0,
-    "bandwidth":0.3,
+    "bandwidth": 0.3,
     "name": "toriigate",
     "description": "solar punk",
     "image": "/home/we/dust/code/pirate-radio/art/toriigate/",
@@ -36,7 +36,7 @@
 },
 {
     "band": 93.5,
-    "bandwidth":0.3,
+    "bandwidth": 0.3,
     "name": "clacky",
     "description": "brain dance",
     "image": "/home/we/dust/code/pirate-radio/art/clacky/",
@@ -45,14 +45,14 @@
 {
 
     "band": 94.7,
-    "bandwidth":0.3,
+    "bandwidth": 0.3,
     "name": "knrk",
     "description": "anything goes",
     "image": ""
 },
 {
     "band": 96.3,
-    "bandwidth":0.3,
+    "bandwidth": 0.3,
     "name": "KWLN",
     "description": "KOWLOON WALLED CITY RADIO FREEDOM ABLEMUTH",
     "image": "/home/we/dust/code/pirate-radio/art/kowloon/",
@@ -61,7 +61,7 @@
 },
 {
     "band": 99.9,
-    "bandwidth":0.3,
+    "bandwidth": 0.3,
     "name": "toast",
     "description": "bouncy",
     "image": "/home/we/dust/code/pirate-radio/art/toaster/",
@@ -71,7 +71,7 @@
 },
 {
     "band": 101.9,
-    "bandwidth":0.3,
+    "bandwidth": 0.3,
     "name": "kink",
     "description": "potted plant",
     "image": "/home/we/dust/code/pirate-radio/art/plant/",
@@ -81,7 +81,7 @@
 },
 {
     "band": 104.2,
-    "bandwidth":0.3,
+    "bandwidth": 0.3,
     "name": "yurui",
     "description": "make it dance",
     "image": "/home/we/dust/code/pirate-radio/art/yurui/",
@@ -89,8 +89,18 @@
     "animation_fps": 14
 },
 {
+    "band": 106.2,
+    "bandwidth": 0.3,
+    "name": "aporee",
+    "stream": "http://radio.aporee.org:8000/aporee_high",
+    "description": "radio.aporee.org",
+    "image": "/home/we/dust/code/pirate-radio/art/yurui/",
+    "animation": "ping-pong",
+    "animation_fps": 14
+},
+{
     "band": 108.0,
-    "bandwidth":0.3,
+    "bandwidth": 0.3,
     "name": "caster",
     "description": "drones",
     "image": "/home/we/dust/code/pirate-radio/art/dronecaster/",
