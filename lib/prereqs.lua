@@ -13,6 +13,11 @@ function prereqs.install()
         print("installing ffmpeg...")
         toinstall=toinstall.."ffmpeg "
     end
+    s=util.os_capture("which lame")
+    if s=="" then 
+        print("installing lame...")
+        toinstall=toinstall.."lame "
+    end
     s=util.os_capture("which curl")
     if s=="" then 
         print("installing curl...")
