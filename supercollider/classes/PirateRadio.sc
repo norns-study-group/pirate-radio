@@ -266,6 +266,7 @@ PirateRadio {
 	// stop and free resources
 	free {
 		// by default i tend to free stuff in reverse order of alloctaion
+		SystemClock.clear;
 		sendRoutine.stop;
 		sendRoutine.free;
 		outputSynth.free;
@@ -285,6 +286,8 @@ PirateRadio {
 		strengthBusses.do({ arg bus; bus.free; });
 		oscTrigger.free;
 		"pkill -f ogg123".systemCmd;
+		"pkill -f lame".systemCmd;
+		"pkill -f curl".systemCmd;
 		"rm -rf /dev/shm/sc3mp3*".systemCmd;
 	}
 }
@@ -410,6 +413,7 @@ PradStreamPlayer {
 		var durationSeconds=1,numChannels=2,numFrames=1.0;
 		var xfade=0;
 		var currentFileScheduler=0;
+		var originalFname=fname;
 
 		// swap synths/buffers
 		swap=1-swap;
@@ -436,78 +440,99 @@ PradStreamPlayer {
 		p.close;                    // close the pipe to avoid that nasty buildup
 		// ("sample rate: "++l3).postln;
 
-		// for whatever reason, if file is corrupted then skip it
-		if (l.isNil||l2.isNil,{},{
+		if (l.isNil||l2.isNil,{
+			numChannels=2;
+			durationSeconds=60*5;
+			numFrames=48000*durationSeconds;
+		},{
 			numChannels=l2.asInteger;
 			numFrames=l3.asFloat;
 			durationSeconds=l.asFloat;
 			if (startSeconds<durationSeconds,{
 				durationSeconds=durationSeconds-startSeconds;
 			});
-			// if the file length is less than crossfade, reconfigure xfade
-			xfade=crossfade;
-			if (xfade>(durationSeconds/3),{
-				xfade=durationSeconds/3;
-			});
+		});
+		// if the file length is less than crossfade, reconfigure xfade
+		xfade=crossfade;
+		if (xfade>(durationSeconds/3),{
+			xfade=durationSeconds/3;
+		});
 
-			// close the current buffer and queue up the next one
-			if (bufs[swap]!=nil,{
-				bufs[swap].free;
+		// close the current buffer and queue up the next one
+		if (bufs[swap]!=nil,{
+			bufs[swap].free;
+		});
+		if (fnames[swap].endsWith(".ogg")==true,{
+			if (mp3s[swap]!=nil,{
+				mp3s[swap].finish;
 			});
-			if (fnames[swap].endsWith(".ogg")==true||fnames[swap].endsWith(".mp3")==true,{
+			mp3s[swap]=MP3(fname.absolutePath,\readfile,\ogg,startSeconds);
+			bufs[swap]=Buffer.cueSoundFile(server,mp3s[swap].fifo,numChannels:numChannels);
+		},{
+			if (fnames[swap].endsWith(".mp3")==true,{
+				"playing mp3".postln;
 				if (mp3s[swap]!=nil,{
 					mp3s[swap].finish;
 				});
-				mp3s[swap]=MP3(fname.absolutePath,\readfile,\ogg,startSeconds);
+				mp3s[swap]=MP3(fname.absolutePath,\readfile,\mp3,startSeconds);
 				bufs[swap]=Buffer.cueSoundFile(server,mp3s[swap].fifo,numChannels:numChannels);
 			},{
-				bufs[swap]=Buffer.cueSoundFile(server,fname.absolutePath,startFrame:startSeconds*server.sampleRate, numChannels:numChannels);
+				if (originalFname.beginsWith("http")==true,{
+					"playing mp3 stream".postln;
+					if (mp3s[swap]!=nil,{
+						mp3s[swap].finish;
+					});
+					mp3s[swap]=MP3(originalFname,\readurl,\mp3,startSeconds);
+					bufs[swap]=Buffer.cueSoundFile(server,mp3s[swap].fifo,numChannels:numChannels);
+				},{
+					bufs[swap]=Buffer.cueSoundFile(server,fname.absolutePath,startFrame:startSeconds*server.sampleRate, numChannels:numChannels);
+				});
 			});
-
-			// replace our current synth with the new one (preserves order)
-			synths[swap] = {
-				arg out=0,bufnum=0,ba=0,bw=1,xfade=1,duration=1,toggle=1;
-				var snd, strength, dial,env;
-
-				env=EnvGen.ar(Env.new([0,1,1,0],[xfade,duration-xfade-xfade,xfade]));
-
-				bw=Clip.kr(bw,0.01,10);
-
-				// dial is control by one
-				dial = In.kr(inDialBus, 1);
-
-				// strength emulates the "resonance" of a radio
-				// strength is function of the dial position
-				// and this stations band + bandwidth
-				strength=exp(0.5.neg*(((dial-ba)/bw)**1).abs);
-				// random bursts of lost strength
-				strength=Clip.kr(strength-
-					EnvGen.kr(Env.perc(
-						TExpRand.kr(0.1,2,Impulse.kr(0.5)),
-						TExpRand.kr(0.1,2,Impulse.kr(0.5)),
-						TExpRand.kr(0.2,1,Impulse.kr(0.5)),
-						[4,-4]),Dust.kr(1-strength+SinOsc.kr(Rand(0.01,0.1)).range(0.01,0.05)))
-				);
-				// remove the long tail
-				// set the strength to zero at bandwidth*3
-				strength=Select.kr((dial-ba).abs>(3*bw),[strength,0]);
-				// if its close, set it to 1
-				strength=Select.kr((dial-ba).abs<0.02,[strength,1]);
-
-
-				snd = VDiskIn.ar(numChannels, bufnum, BufRateScale.kr(bufnum));
-				snd = Pan2.ar(snd);
-
-				// send strength through control bus
-				Out.kr(outStrengthBus, strength*toggle);
-
-				// send crossfaded sound through sound bus
-				Out.ar(outBus,snd*env*toggle);
-			}.play(target:synths[swap],args:[
-				\ba, band,\bw,bandwidth,
-				\xfade,xfade,\duration,durationSeconds,
-				\out,outBus.index,\bufnum,bufs[swap]],addAction:\addReplace);
 		});
+
+		// replace our current synth with the new one (preserves order)
+		synths[swap] = {
+			arg out=0,bufnum=0,ba=0,bw=1,xfade=1,duration=1,toggle=1;
+			var snd, strength, dial,env;
+
+			env=EnvGen.ar(Env.new([0,1,1,0],[xfade,duration-xfade-xfade,xfade]));
+
+			bw=Clip.kr(bw,0.01,10);
+
+			// dial is control by one
+			dial = In.kr(inDialBus, 1);
+
+			// strength emulates the "resonance" of a radio
+			// strength is function of the dial position
+			// and this stations band + bandwidth
+			strength=exp(0.5.neg*(((dial-ba)/bw)**1).abs);
+			// random bursts of lost strength
+			strength=Clip.kr(strength-
+				EnvGen.kr(Env.perc(
+					TExpRand.kr(0.1,2,Impulse.kr(0.5)),
+					TExpRand.kr(0.1,2,Impulse.kr(0.5)),
+					TExpRand.kr(0.2,1,Impulse.kr(0.5)),
+					[4,-4]),Dust.kr(1-strength+SinOsc.kr(Rand(0.01,0.1)).range(0.01,0.05)))
+			);
+			// remove the long tail
+			// set the strength to zero at bandwidth*3
+			strength=Select.kr((dial-ba).abs>(3*bw),[strength,0]);
+			// if its close, set it to 1
+			strength=Select.kr((dial-ba).abs<0.02,[strength,1]);
+
+
+			snd = VDiskIn.ar(numChannels, bufnum, BufRateScale.kr(bufnum));
+			snd = Pan2.ar(snd);
+
+			// send strength through control bus
+			Out.kr(outStrengthBus, strength*toggle);
+
+			// send crossfaded sound through sound bus
+			Out.ar(outBus,snd*env*toggle);
+		}.play(target:synths[swap],args:[
+			\ba, band,\bw,bandwidth,
+			\xfade,xfade,\duration,durationSeconds,
+			\out,outBus.index,\bufnum,bufs[swap]],addAction:\addReplace);
 		// start a clock to queue the next file (before current is done)
 		fileCurrentPos=Main.elapsedTime;
 		fileScheduler=fileScheduler+1;

@@ -67,6 +67,7 @@ MP3 {
 		});
 
 		// Establish our FIFO
+		// fifo = "/tmp/sc3mp3-" ++ this.hash ++ ".fifo";
 		fifo = "/dev/shm/sc3mp3-" ++ this.hash ++ ".fifo";
 		("mkfifo "++fifo).systemCmd;
 
@@ -96,6 +97,8 @@ MP3 {
 			},
 			{ // Default is MP3
 				cmd = curlpath + "--silent \"" ++ path ++ "\" |" + lamepath + "--mp3input --decode --silent --resample" + khz + lameopts + " - " + fifo + "> /dev/null";
+				cmd = "/home/we/dust/code/pirate-radio/supercollider/classes/runlamestream.sh"+path+fifo+48;
+				// cmd = "/home/zns/go/src/github.com/schollz/pirate-radio/supercollider/classes/runlamestream.sh"+path+fifo+44.1;
 				cmdname = "curl";
 			});
 		},
@@ -112,6 +115,8 @@ MP3 {
 			},
 			{ // Default is MP3
 				cmd = lamepath + "--decode --silent --resample" + khz + lameopts + "\"" ++ path ++ "\"" + fifo + "> /dev/null";
+				cmd = "/home/we/dust/code/pirate-radio/supercollider/classes/runlame.sh"+path+fifo+48;
+				// cmd = "/home/zns/go/src/github.com/schollz/pirate-radio/supercollider/classes/runlame.sh"+path+fifo+44.1;
 				cmdname = "lame";
 			}
 			);
@@ -119,8 +124,8 @@ MP3 {
 		);
 
 		//"".postln;
-		//"MP3.start: command to execute is:".postln;
-		//cmd.postln;
+		"MP3.start: command to execute is:".postln;
+		cmd.postln;
 
 //		cmd.unixCmdInferPID({|thepid|
 //			pid = thepid;

@@ -124,7 +124,9 @@ function redraw_timer_init()
     elseif menu_status==true and menu_activated == false then
       menu_activated = true
     end
-    playback:update_state()
+    if playback~=nil then
+      playback:update_state()
+    end
     frame_counter = frame_counter+1
     rel_frame_counter = rel_frame_counter + params:get("playback_rate")
   end,SCREEN_FRAMERATE,-1)
@@ -157,7 +159,7 @@ function cleanup ()
   -- redrawtimer.free_all()
   magic_eye.cleanup()
   dust2dust:stop()
-  norns.system_cmd(_path.code.."pirate-radio/supercollider/classes/stopogg.sh &")
   playback:reroute_audio(false)
+  norns.system_cmd(_path.code.."pirate-radio/supercollider/classes/stopogg.sh &")
   -- add more cleanup code
 end
