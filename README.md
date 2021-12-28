@@ -33,21 +33,7 @@ Sign your name below (via a [PR](https://docs.github.com/en/github/collaborating
 
 *p2p norns pirate radio: an educational project for new developers to learn how to code*
 
-## The Team
-
 *[pirates...] a shallow and functional hierarchy, risk / reward, collective praxis* - `@syntheist`
-
-- Developers / QA / Support: [All tracked here.](https://docs.google.com/spreadsheets/d/1sgBaggUcnjZBOgAjG8eIFyYXiv_lspyWofmjwelrVUE/edit?usp=sharing)
-- Product Owner: `@obakegaku`. The term [Product Owner](https://en.wikipedia.org/wiki/Scrum_(software_development)#Product_owner) comes from agile software development practices. POs balance product (usable software) choices with various stakeholder, technical, and team constraints. They are ultimately responsible for shaping the product and ensuring all voices are heard.
-- Project Manager: `@tyleretters`. PM's simply keep things on the rails. Since this is an educational project with volunteered time, the main role of the project manager will be ensuring the team has clear objectives and good tooling.
-- CTO: `@catfact`. Stares off distantly from the crows nest.
-
-## The Tools
-
-- GitHub: this repository will house the script and will eventually be released on norns.
-- Text Editor: Bring your own text editor / IDE. If you don't have one yet, your tutor will help you select one that fits your skill and aesthetic.
-- Command Line: Use the command line / terminal to commit your code. Again, your tutor will help you learn git.
-- norns / shield: :)
 
 ## Goal
 
