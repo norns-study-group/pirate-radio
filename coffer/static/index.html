@@ -2,7 +2,7 @@
 
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>🏴‍☠️</title>
+    <title>🏴‍☠️ norns pirate radio</title>
     <link rel="stylesheet" href="/static/normalize.css">
     <link rel="stylesheet" href="/static/skeleton.css">
     <style>
@@ -10,6 +10,8 @@
             max-width:750px;margin:20px auto;padding:0 10px;
             font-family: 'Courier New', monospace;
             font-size: 1.3em;
+	    background: #333;
+		color: #fff;
         }
 
     .preview {
@@ -20,6 +22,16 @@
     }
     .fr {
         float: right;
+    }
+    input[type="email"], input[type="number"], input[type="search"], input[type="text"], input[type="tel"], input[type="url"], input[type="password"], textarea, select,input, textarea, select, fieldset, .playicon, .pauseicon {
+	    background:#333;
+    }
+    .button, button, input[type="submit"], input[type="reset"], input[type="button"] {
+	    color: #fff;
+    }
+    .upload {
+	    height:auto;
+		    font-size:1.5em;
     }
 </style>
 </head>
@@ -32,7 +44,7 @@
                     {{line}}
                 </div>
             </p>
-            <h5>contribute</h5>
+            <h4 style="font-weight:900;">norns pirate radio</h4>
             <form enctype="multipart/form-data" action="/" method="post">
                 <div class="row">
                     <div class="twelve columns">
@@ -62,9 +74,9 @@
                         <input type="file" name="files" multiple>
                     </div>
                 </div>
-                <input class="button" class="u-full-width" type="submit" value="upload">
+                <input style="font-size:1.5em;height:auto;" class="button upload" class="u-full-width" type="submit" value="upload">
             </form>
-            <h5>uploads</h5>
+            <h5>buried doubloons</h5>
             <div v-for="upload in uploads" class="preview">
                 <div class="row">
                     <div class="nine columns">
@@ -82,7 +94,7 @@
                     </small>
                 </div>
                 <div class="row">
-                    <audio controls>
+                    <audio preload="none" controls>
                         <source v-bind:src="upload.File" type="audio/ogg">
                         Your browser does not support the audio tag.
                     </audio>
@@ -107,9 +119,9 @@
             els[i].remove();
             let wavesurfer = WaveSurfer.create({
                 container: document.getElementsByClassName("wave")[i_],
-                waveColor: '#909090',
-                progressColor: '#443e3c',
-                cursorColor: '#ffffff',
+                waveColor: '#999',
+                progressColor: '#9999',
+                cursorColor: '#f8f8ff',
                 backend: 'MediaElement',
                 mediaControls: false,
                 hideScrollbar: true,
@@ -144,7 +156,7 @@
                     console.log('loaded peaks! sample_rate: ' + peaks.sample_rate);
 
                     // load peaks into wavesurfer.js
-                    wavesurfer.load(src_, peaks.data);
+                    wavesurfer.load(src_, peaks.data, 'metadata');
                 })
                 .catch((e) => {
                     console.error('error', e);
