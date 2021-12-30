@@ -30,7 +30,7 @@ function sync:download_()
   for word in files:gmatch("%S+") do
     file_list[word]=true
   end
-  local dl=util.os_capture("curl -m 5 -k "..self.server.."/uploads")
+  local dl=util.os_capture("curl -m 30 -k "..self.server.."/uploads")
   print("sync: "..dl)
 
   local server_list={}

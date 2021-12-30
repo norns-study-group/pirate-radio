@@ -93,6 +93,10 @@ function radio.create_playlist_from_tapes()
 
   -- make sure to refresh the engine
   engine.refresh()
+  clock.run(function()
+	clock.sleep(1)
+  	playback:frontier()
+  end)
 end
 
 function radio.create_playlists_from_sync(data)
@@ -131,6 +135,10 @@ function radio.create_playlists_from_sync(data)
   end
 
   radio.pirate_radio_enabled=true
+  clock.run(function()
+	clock.sleep(1)
+  	playback:frontier()
+  end)
   return true
 end
 
@@ -168,6 +176,10 @@ function radio.create_playlists_from_pirate_radio()
   -- make sure to refresh the engine
   engine.refresh()
   radio.pirate_radio_enabled=true
+  clock.run(function()
+	clock.sleep(1)
+  	playback:frontier()
+  end)
 end
 
 function radio.index_of_station(band)
