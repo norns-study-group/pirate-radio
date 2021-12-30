@@ -30,8 +30,10 @@ function prereqs.install()
     end
     if toinstall~="" then 
         print("installing pre-requisites")
+	print("sudo apt update")
+        os.execute("sudo apt update")
         print("sudo apt install -y "..toinstall)
-        print(util.os_capture("sudo apt install -y "..toinstall))
+        os.execute("sudo apt install -y "..toinstall)
     end
 end
 
