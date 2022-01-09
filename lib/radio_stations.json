@@ -12,7 +12,6 @@
     "bandwidth": 0.3,
     "name": "coffee time",
     "description": "breathe the fumes",
-    "allow_uploads": false,
     "image": "/home/we/dust/code/pirate-radio/art/coffee/",
     "animation_fps": 7
 },
