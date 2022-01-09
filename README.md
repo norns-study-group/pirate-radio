@@ -1,6 +1,6 @@
 # first time starting
 
-the first time you start the *pirate radio* it will take a minute. it will first install nessecary linux tools if not already installed (`vorbis-tools`, `espeak`, `ffmpeg` and `lame`). afterwards it will download available playlists for the different stations.
+the first time you start the *pirate radio* it will take a minute. it will first install necessary linux tools if not already installed (`vorbis-tools`, `espeak`, `ffmpeg` and `lame`). afterwards it will download available playlists for the different stations.
 
 # uploading your own music
 
