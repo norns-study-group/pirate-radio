@@ -1,6 +1,6 @@
 ---pirate radio
--- <version> @<authors>
--- lines: llllllll.co/t/<lines thread id>
+-- infinitedigits,eigen,jaseknighter,tyleretters, et al
+-- lines: llllllll.co/t/pirate-radio
 --
 -- yar...
 
