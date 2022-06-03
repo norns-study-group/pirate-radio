@@ -48,7 +48,7 @@
     "name": "knrk",
     "description": "anything goes",
     "image": "/home/we/dust/code/pirate-radio/art/infinite.png"
-},
+},    
 {
     "band": 96.3,
     "bandwidth": 0.3,
@@ -78,6 +78,12 @@
     "animation_fps": 7,
     "x_offset": 5
 },
+{   "band": 100.0,
+    "bandwidth": 0.3,
+    "name": "compilations & mixtapes",
+    "description": "compilations & mixtapes",
+    "image": "/home/we/dust/code/pirate-radio/art/infinite.png"
+},    
 {
     "band": 101.9,
     "bandwidth": 0.3,
