@@ -43,6 +43,7 @@ PirateRadio {
 	var effects;
 	var saturator;
 	var sendRoutine;
+
 	//--- synths
 
 	// final output synth
@@ -120,7 +121,6 @@ PirateRadio {
 		// buses to send information back to norns
 		totalStrengthBus=Bus.control(server,1);
 		spectrumAnalysisBus=Bus.control(server,10);
-
 
 		//------------------
 		//-- create synths and components
@@ -347,6 +347,7 @@ PradStreamPlayer {
 	var <fileSpecial;
 	var <fileCurrentPos;
 	var <fileScheduler;
+	var <ffprobes;
 
 	*new {
 		arg idArg, serverArg, outBusArg, outStrengthBusArg, inDialBusArg;
@@ -372,6 +373,7 @@ PradStreamPlayer {
 		mp3s=Array.newClear(2);
 		ismp3=Array.newClear(2);
 		fnames=Array.newClear(2);
+		ffprobes=Dictionary.new(16);
 		//  use a dummy synth so we can replace it thus keeping the order of buses intact
 		(0..1).do({
 			arg i;
@@ -407,35 +409,24 @@ PradStreamPlayer {
 		});
 	}
 
-	playFile {
-		arg fname, startSeconds=0;
+	probe {
+		arg fname;
 		var p,l,l2,l3;
 		var durationSeconds=1,numChannels=2,numFrames=1.0;
-		var xfade=0;
-		var currentFileScheduler=0;
-		var originalFname=fname;
-
-		// swap synths/buffers
-		swap=1-swap;
-		("station "++id++" playing file "++fname.asAbsolutePath).postln;
-		fnames[swap]=(fname.asAbsolutePath).asString;
-
-		// send update to server that a song is playing
-		NetAddr("127.0.0.1", 10111).sendMsg("playing",id,fnames[swap]);
 
 		// get sound file duration
-		p = Pipe.new("ffprobe -i '"++fname.asAbsolutePath++"' -show_format -v quiet | sed -n 's/duration=//p'", "r"); 
+		p = Pipe.new("nice ffprobe -i '"++fname.asAbsolutePath++"' -show_format -v quiet | sed -n 's/duration=//p'", "r"); 
 		l = p.getLine;                    // get the first line
 		p.close;                    // close the pipe to avoid that nasty buildup
 
 		// get sound channels
-		p = Pipe.new("ffprobe -loglevel quiet -i '"++fname.asAbsolutePath++"' -show_streams -select_streams a:0 | grep channels | sed 's/channels=//g'", "r");
+		p = Pipe.new("nice ffprobe -loglevel quiet -i '"++fname.asAbsolutePath++"' -show_streams -select_streams a:0 | grep channels | sed 's/channels=//g'", "r");
 		l2 = p.getLine;                    // get the first line
 		p.close;                    // close the pipe to avoid that nasty buildup
 		// ("channels: "++l2).postln;
 
 		// get sound channels
-		p = Pipe.new("ffprobe -i '"++fname.asAbsolutePath++"' -show_streams -v quiet | sed -n 's/sample_rate=//p'", "r"); 
+		p = Pipe.new("nice ffprobe -i '"++fname.asAbsolutePath++"' -show_streams -v quiet | sed -n 's/sample_rate=//p'", "r"); 
 		l3 = p.getLine;                    // get the first line
 		p.close;                    // close the pipe to avoid that nasty buildup
 		// ("sample rate: "++l3).postln;
@@ -448,10 +439,44 @@ PradStreamPlayer {
 			numChannels=l2.asInteger;
 			numFrames=l3.asFloat;
 			durationSeconds=l.asFloat;
-			if (startSeconds<durationSeconds,{
-				durationSeconds=durationSeconds-startSeconds;
-			});
 		});
+
+		Array.with(durationSeconds, numChannels, numFrames);
+	}
+
+	playFile {
+		arg fname, startSeconds=0;
+		var pr;
+		var durationSeconds=1,numChannels=2,numFrames=1.0;
+		var xfade=0;
+		var currentFileScheduler=0;
+		var originalFname=fname;
+
+		// swap synths/buffers
+		this.postln;
+		("station "++id++" playing file "++fname.asAbsolutePath).postln;
+		swap=1-swap;
+		fnames[swap]=(fname.asAbsolutePath).asString;
+
+		// send update to server that a song is playing
+		NetAddr("127.0.0.1", 10111).sendMsg("playing",id,fnames[swap]);
+
+		if (ffprobes.includesKey(fname.asAbsolutePath),{
+			pr=ffprobes[fname.asAbsolutePath];
+		},{
+			pr=this.probe(fname.asAbsolutePath);
+			ffprobes.put(fname.asAbsolutePath, pr);
+		});
+		pr.postln;
+
+		durationSeconds=pr[0];
+		numChannels=pr[1];
+		numFrames=pr[2];
+
+		if (startSeconds<durationSeconds,{
+			durationSeconds=durationSeconds-startSeconds;
+		});
+
 		// if the file length is less than crossfade, reconfigure xfade
 		xfade=crossfade;
 		if (xfade>(durationSeconds/3),{
