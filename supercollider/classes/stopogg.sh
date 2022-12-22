@@ -1,5 +1,6 @@
 #!/bin/bash
 sleep 2
+pkill -f curl 
 pkill -f oggdec
 pkill -f ogg123
 pkill -f lame

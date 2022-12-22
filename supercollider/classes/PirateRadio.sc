@@ -384,7 +384,6 @@ PradStreamPlayer {
 		});
 	}
 
-
 	playNextFile {
 		var nextFile=nil;
 		if (fileSpecial.isNil,{
@@ -396,7 +395,7 @@ PradStreamPlayer {
 				if (filePaths[fileIndexCurrent]==nil,{
 					fileIndexCurrent=0;
 				});
-				("station "+id+" queing next file "+(fileIndexCurrent+1)+" of "+filePaths.size).postln;
+				("station "+id+" queueing next file "+(fileIndexCurrent+1)+" of "+filePaths.size).postln;
 				nextFile=filePaths[fileIndexCurrent];
 			});
 		},{
@@ -409,27 +408,30 @@ PradStreamPlayer {
 		});
 	}
 
-	probe {
+	probeFile {
 		arg fname;
 		var p,l,l2,l3;
 		var durationSeconds=1,numChannels=2,numFrames=1.0;
+
+		("Probing new file "++fname.asAbsolutePath).postln;
 
 		// get sound file duration
 		p = Pipe.new("nice ffprobe -i '"++fname.asAbsolutePath++"' -show_format -v quiet | sed -n 's/duration=//p'", "r"); 
 		l = p.getLine;                    // get the first line
 		p.close;                    // close the pipe to avoid that nasty buildup
+		("duration: "++l).postln;
 
 		// get sound channels
 		p = Pipe.new("nice ffprobe -loglevel quiet -i '"++fname.asAbsolutePath++"' -show_streams -select_streams a:0 | grep channels | sed 's/channels=//g'", "r");
 		l2 = p.getLine;                    // get the first line
 		p.close;                    // close the pipe to avoid that nasty buildup
-		// ("channels: "++l2).postln;
+		("channels: "++l2).postln;
 
 		// get sound channels
 		p = Pipe.new("nice ffprobe -i '"++fname.asAbsolutePath++"' -show_streams -v quiet | sed -n 's/sample_rate=//p'", "r"); 
 		l3 = p.getLine;                    // get the first line
 		p.close;                    // close the pipe to avoid that nasty buildup
-		// ("sample rate: "++l3).postln;
+		("sample rate: "++l3).postln;
 
 		if (l.isNil||l2.isNil,{
 			numChannels=2;
@@ -439,9 +441,12 @@ PradStreamPlayer {
 			numChannels=l2.asInteger;
 			numFrames=l3.asFloat;
 			durationSeconds=l.asFloat;
-		});
+		});	
 
-		Array.with(durationSeconds, numChannels, numFrames);
+		ffprobes.put(
+			fname.asAbsolutePath,
+		    Array.with(durationSeconds, numChannels, numFrames),	
+		);
 	}
 
 	playFile {
@@ -453,7 +458,6 @@ PradStreamPlayer {
 		var originalFname=fname;
 
 		// swap synths/buffers
-		this.postln;
 		("station "++id++" playing file "++fname.asAbsolutePath).postln;
 		swap=1-swap;
 		fnames[swap]=(fname.asAbsolutePath).asString;
@@ -461,13 +465,10 @@ PradStreamPlayer {
 		// send update to server that a song is playing
 		NetAddr("127.0.0.1", 10111).sendMsg("playing",id,fnames[swap]);
 
-		if (ffprobes.includesKey(fname.asAbsolutePath),{
-			pr=ffprobes[fname.asAbsolutePath];
-		},{
-			pr=this.probe(fname.asAbsolutePath);
-			ffprobes.put(fname.asAbsolutePath, pr);
+		if (ffprobes.includesKey(fname.asAbsolutePath).not, {
+			this.probeFile(fname.asAbsolutePath);
 		});
-		pr.postln;
+		pr=ffprobes[fname.asAbsolutePath];
 
 		durationSeconds=pr[0];
 		numChannels=pr[1];
@@ -594,6 +595,7 @@ PradStreamPlayer {
 		if (fname.notNil,{
 			("station"+id+"adding file"+fname).postln;
 			filePaths=filePaths.add(fname);
+			this.probeFile(fname);
 		},{
 			"addFile: filename is nil!".postln;
 		});
