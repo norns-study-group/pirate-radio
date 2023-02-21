@@ -431,6 +431,7 @@ PradStreamPlayer {
 			durationSeconds=sndfile.duration;
 			numChannels=sndfile.numChannels;
 			numFrames=sndfile.numFrames;
+			sndfile.close;
 		},{
 			// fallback in case soundfile fails
 			["IS NIL: "++fnames[swap]].postln;
