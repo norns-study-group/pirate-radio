@@ -66,16 +66,20 @@ MP3 {
 			^nil;
 		});
 
-		// Establish our FIFO
-		// fifo = "/tmp/sc3mp3-" ++ this.hash ++ ".fifo";
-		fifo = "/dev/shm/sc3mp3-" ++ this.hash ++ ".fifo";
-		("mkfifo "++fifo).systemCmd;
+		if (format==\ogg,{
+			"ogg supported, using file directly".postln;
+			fifo = path.asString;
+		},{
+			// Establish our FIFO
+			// fifo = "/tmp/sc3mp3-" ++ this.hash ++ ".fifo";
+			fifo = "/dev/shm/sc3mp3-" ++ this.hash ++ ".fifo";
+			("mkfifo "++fifo).systemCmd;
 
 
-		// Ensure things will be tidied up if the user recompiles
-		ShutDown.add({this.finish});
-
-		this.start;
+			// Ensure things will be tidied up if the user recompiles
+			ShutDown.add({this.finish});
+			this.start;
+		});
 	}
 
 	// Start the LAME command - involving some elastic trickery to work out the PID of the created process.
@@ -152,9 +156,13 @@ MP3 {
 	}
 
 	finish {
-		this.stop;
-		("rm " ++ fifo).systemCmd;
-		("rm " ++ fifo ++ ".pid").systemCmd;
+		if (format==\ogg,{
+			// do nothing
+		},{
+			this.stop;
+			("rm " ++ fifo).systemCmd;
+			("rm " ++ fifo ++ ".pid").systemCmd;
+		});
 	}
 
 	// Return a boolean to say whether we're playing or not

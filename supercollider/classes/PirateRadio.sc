@@ -412,6 +412,7 @@ PradStreamPlayer {
 		var p,l,l2,l3;
 		var durationSeconds=1,numChannels=2,numFrames=1.0;
 		var xfade=0;
+		var sndfile;
 		var currentFileScheduler=0;
 		var originalFname=fname;
 
@@ -423,35 +424,47 @@ PradStreamPlayer {
 		// send update to server that a song is playing
 		NetAddr("127.0.0.1", 10111).sendMsg("playing",id,fnames[swap]);
 
-		// get sound file duration
-		p = Pipe.new("ffprobe -i '"++fname.asAbsolutePath++"' -show_format -v quiet | sed -n 's/duration=//p'", "r"); 
-		l = p.getLine;                    // get the first line
-		p.close;                    // close the pipe to avoid that nasty buildup
 
-		// get sound channels
-		p = Pipe.new("ffprobe -loglevel quiet -i '"++fname.asAbsolutePath++"' -show_streams -select_streams a:0 | grep channels | sed 's/channels=//g'", "r");
-		l2 = p.getLine;                    // get the first line
-		p.close;                    // close the pipe to avoid that nasty buildup
-		// ("channels: "++l2).postln;
-
-		// get sound channels
-		p = Pipe.new("ffprobe -i '"++fname.asAbsolutePath++"' -show_streams -v quiet | sed -n 's/sample_rate=//p'", "r"); 
-		l3 = p.getLine;                    // get the first line
-		p.close;                    // close the pipe to avoid that nasty buildup
-		// ("sample rate: "++l3).postln;
-
-		if (l.isNil||l2.isNil,{
-			numChannels=2;
-			durationSeconds=60*5;
-			numFrames=48000*durationSeconds;
+		// get sound file information
+		sndfile=SoundFile.openRead(fnames[swap]);
+		if (sndfile.notNil,{
+			durationSeconds=sndfile.duration;
+			numChannels=sndfile.numChannels;
+			numFrames=sndfile.numFrames;
+			sndfile.close;
 		},{
-			numChannels=l2.asInteger;
-			numFrames=l3.asFloat;
-			durationSeconds=l.asFloat;
-			if (startSeconds<durationSeconds,{
-				durationSeconds=durationSeconds-startSeconds;
+			// fallback in case soundfile fails
+			["IS NIL: "++fnames[swap]].postln;
+			// get sound file duration
+			p = Pipe.new("ffprobe -i '"++fname.asAbsolutePath++"' -show_format -v quiet | sed -n 's/duration=//p'", "r"); 
+			l = p.getLine;                    // get the first line
+			p.close;                    // close the pipe to avoid that nasty buildup
+
+			// get sound channels
+			p = Pipe.new("ffprobe -loglevel quiet -i '"++fname.asAbsolutePath++"' -show_streams -select_streams a:0 | grep channels | sed 's/channels=//g'", "r");
+			l2 = p.getLine;                    // get the first line
+			p.close;                    // close the pipe to avoid that nasty buildup
+			// ("channels: "++l2).postln;
+
+			// get sound channels
+			p = Pipe.new("ffprobe -i '"++fname.asAbsolutePath++"' -show_streams -v quiet | sed -n 's/sample_rate=//p'", "r"); 
+			l3 = p.getLine;                    // get the first line
+			p.close;                    // close the pipe to avoid that nasty buildup
+			// ("sample rate: "++l3).postln;
+			if (l.isNil||l2.isNil,{
+				numChannels=2;
+				durationSeconds=10;
+				numFrames=48000*durationSeconds;
+			},{
+				numChannels=l2.asInteger;
+				numFrames=l3.asFloat;
+				durationSeconds=l.asFloat;
 			});
 		});
+		if (startSeconds<durationSeconds,{
+			durationSeconds=durationSeconds-startSeconds;
+		});
+
 		// if the file length is less than crossfade, reconfigure xfade
 		xfade=crossfade;
 		if (xfade>(durationSeconds/3),{
